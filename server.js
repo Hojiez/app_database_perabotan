@@ -17,7 +17,7 @@ const db = mysql.createConnection({
 
 db.connect(err => {
     if (err) console.error('Gagal koneksi database:', err);
-    else console.log('Database MySQL Terhubung!');
+    else console.log('Database MySQL Terhubung!'); 
 });
 
 app.post('/api/login', (req, res) => {

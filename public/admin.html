@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Management - Toko Perabotan</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        // Konfigurasi Tailwind untuk Dark Mode
-        tailwind.config = { darkMode: 'class' }
+    <script src="https://cdn.tailwindcss.com"></script> 
+    <script> 
+        tailwind.config = { darkMode: 'class' } 
         
-        // Cek preferensi tema saat load
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark')
         } else {
@@ -70,7 +68,7 @@
         if(localStorage.getItem('role') !== 'management') window.location.href = '/';
         function logout() { localStorage.clear(); window.location.href = '/'; }
 
-        // LOGIKA DARK MODE
+        
         function toggleTheme() {
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
@@ -117,7 +115,7 @@
         function prepareEdit(id, nama, harga, stok) {
             editMode = true;
             document.getElementById('id_barang').value = id;
-            document.getElementById('id_barang').disabled = true; // ID tidak boleh diganti
+            document.getElementById('id_barang').disabled = true;
             document.getElementById('nama_barang').value = nama;
             document.getElementById('harga').value = harga;
             document.getElementById('stok').value = stok;
