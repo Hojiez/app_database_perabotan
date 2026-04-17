@@ -16,33 +16,37 @@
         #autocompleteList { max-height: 200px; overflow-y: auto; }
         .struk-kertas { background-image: radial-gradient(circle at top, transparent 4px, white 5px); background-size: 10px 10px; background-position: top; }
         .dark .struk-kertas { background-image: radial-gradient(circle at top, transparent 4px, #1e293b 5px); background-color: #1e293b; }
+
+        /* CSS KHUSUS PRINT */
+        @media print {
+            body * { visibility: hidden; } /* Sembunyikan semua elemen */
+            #areaCetak, #areaCetak * { visibility: visible; } /* Hanya tampilkan area cetak */
+            #areaCetak { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
 <body class="bg-slate-200 dark:bg-slate-950 p-4 md:p-8 font-sans h-screen flex flex-col transition-colors duration-300">
     
-    <div class="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm mb-6">
+    <div class="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm mb-6 no-print">
         <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Sistem Kasir</h1>
         <div class="flex items-center gap-4">
             <button onclick="toggleTheme()" class="p-2 bg-slate-100 dark:bg-slate-700 rounded-full">
-                <span class="dark:hidden">🌙</span>
-                <span class="hidden dark:inline">☀️</span>
+                <span class="dark:hidden">🌙</span><span class="hidden dark:inline">☀️</span>
             </button>
             <button onclick="logout()" class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-4 py-2 rounded-lg font-bold hover:bg-red-200 transition text-sm">Logout</button>
         </div>
     </div>
 
-    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start overflow-hidden">
-        
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start overflow-hidden no-print">
         <div class="lg:col-span-7 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
             <h2 class="text-xl font-bold mb-4 text-gray-700 dark:text-gray-200 border-b dark:border-slate-700 pb-2">Tambah Barang</h2>
-            
             <form id="formTambah" class="space-y-4">
                 <div class="relative">
                     <label class="block font-semibold mb-1 text-gray-600 dark:text-gray-400">Pencarian Barang</label>
                     <input type="text" id="searchBar" placeholder="Ketik nama perabotan..." class="w-full p-3 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus:border-blue-500 dark:bg-slate-900 dark:text-white focus:outline-none" autocomplete="off">
                     <div id="autocompleteList" class="absolute z-10 w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl mt-1 hidden"></div>
                 </div>
-
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block font-semibold mb-1 text-gray-600 dark:text-gray-400">Harga Satuan</label>
@@ -53,197 +57,125 @@
                         <input type="number" id="jumlahBeli" min="1" value="1" class="w-full p-3 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus:border-blue-500 dark:bg-slate-900 dark:text-white focus:outline-none" required>
                     </div>
                 </div>
-
-                <button type="submit" class="w-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-2 border-blue-500 font-bold text-lg py-3 rounded-lg hover:bg-blue-600 hover:text-white transition mt-4">
-                    + Tambah ke Resi
-                </button>
+                <button type="submit" class="w-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-2 border-blue-500 font-bold text-lg py-3 rounded-lg hover:bg-blue-600 hover:text-white transition mt-4">+ Tambah ke Resi</button>
             </form>
-            <div id="statusAlert" class="mt-4 hidden p-3 rounded text-center font-semibold"></div>
         </div>
 
         <div class="lg:col-span-5 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg relative struk-kertas flex flex-col h-full overflow-hidden">
             <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-white text-center border-b-2 border-dashed border-gray-200 dark:border-slate-700 pb-3">RESI PENJUALAN</h2>
-            
-            <div id="daftarKeranjang" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-2">
-                <p class="text-center text-gray-400 mt-10 italic">Resi masih kosong...</p>
-            </div>
-
+            <div id="daftarKeranjang" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 italic text-gray-400 text-center mt-10">Resi masih kosong...</div>
             <div class="border-t-2 border-dashed border-gray-300 dark:border-slate-700 pt-4">
                 <div class="flex justify-between items-center mb-6">
                     <span class="text-lg font-bold text-gray-600 dark:text-gray-400">TOTAL:</span>
                     <span id="grandTotal" class="text-2xl font-black text-green-600 dark:text-green-400">Rp 0</span>
                 </div>
-                <button id="btnCheckout" class="w-full bg-green-500 text-white font-bold text-xl py-4 rounded-lg shadow-lg hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                    BAYAR SEKARANG
-                </button>
+                <button id="btnCheckout" class="w-full bg-green-500 text-white font-bold text-xl py-4 rounded-lg shadow-lg hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>BAYAR SEKARANG</button>
             </div>
         </div>
+    </div>
 
+    <div id="areaCetak" class="hidden font-mono p-4 text-black bg-white">
+        <div class="text-center mb-4">
+            <h2 class="text-xl font-bold uppercase">Toko Perabotan Bintang</h2>
+            <p class="text-sm">Jl. Perabotan No. 123, Malang</p>
+            <p class="text-xs">Telp: 0812-3456-7890</p>
+        </div>
+        <div class="border-t border-b border-black border-dashed py-2 mb-4 text-sm">
+            <p>Kasir: <span id="p_namaKasir"></span></p>
+            <p>Waktu: <span id="p_waktu"></span></p>
+        </div>
+        <table class="w-full text-sm mb-4">
+            <thead><tr class="text-left border-b border-black border-dashed"><th>Item</th><th>Qty</th><th>Subtotal</th></tr></thead>
+            <tbody id="p_listBarang"></tbody>
+        </table>
+        <div class="border-t border-black border-dashed pt-2 text-right">
+            <p class="font-bold">TOTAL: <span id="p_grandTotal"></span></p>
+        </div>
+        <p class="text-center text-xs mt-8">*** Terima Kasih Atas Kunjungan Anda ***</p>
     </div>
 
     <script>
         if(localStorage.getItem('role') !== 'kasir') window.location.href = '/';
         function logout() { localStorage.clear(); window.location.href = '/'; }
-
         function toggleTheme() {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
+            document.documentElement.classList.toggle('dark');
+            localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         }
 
-        let barangTerpilih = null; 
-        let keranjang = [];        
-
-        const searchInput = document.getElementById('searchBar');
-        const autocompleteList = document.getElementById('autocompleteList');
-        const tampilHarga = document.getElementById('tampilHarga');
-        const jumlahInput = document.getElementById('jumlahBeli');
-        const daftarKeranjang = document.getElementById('daftarKeranjang');
-        const grandTotalTxt = document.getElementById('grandTotal');
-        const btnCheckout = document.getElementById('btnCheckout');
-        const alertBox = document.getElementById('statusAlert');
+        let barangTerpilih = null, keranjang = [];
+        const searchInput = document.getElementById('searchBar'), autocompleteList = document.getElementById('autocompleteList'), tampilHarga = document.getElementById('tampilHarga'), jumlahInput = document.getElementById('jumlahBeli'), daftarKeranjang = document.getElementById('daftarKeranjang'), grandTotalTxt = document.getElementById('grandTotal'), btnCheckout = document.getElementById('btnCheckout');
 
         let timer;
-        searchInput.addEventListener('input', function() {
-            clearTimeout(timer);
-            barangTerpilih = null;
-            tampilHarga.value = '';
-            if (this.value.length === 0) { autocompleteList.classList.add('hidden'); return; }
-            timer = setTimeout(() => searchBarang(this.value), 300);
-        });
-
-        document.addEventListener('click', (e) => {
-            if (e.target !== searchInput && e.target !== autocompleteList) autocompleteList.classList.add('hidden');
-        });
-
-        async function searchBarang(query) {
-            const res = await fetch(`/api/barang?search=${query}`);
-            const barang = await res.json();
-            autocompleteList.innerHTML = '';
-            
-            if (barang.length === 0) {
-                autocompleteList.innerHTML = '<div class="p-3 text-gray-500 dark:text-gray-400 text-center">Tidak ditemukan</div>';
-            } else {
-                barang.forEach(b => {
-                    if(b.stok <= 0) return;
-                    const item = document.createElement('div');
-                    item.className = 'p-3 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer border-b dark:border-slate-800 flex justify-between';
-                    item.innerHTML = `<div><div class="font-bold dark:text-white">${b.nama_barang}</div><div class="text-xs text-gray-500">Stok: ${b.stok}</div></div><div class="font-semibold text-blue-600 dark:text-blue-400">Rp${b.harga.toLocaleString('id-ID')}</div>`;
-                    
-                    item.addEventListener('click', () => {
-                        barangTerpilih = b; 
-                        searchInput.value = b.nama_barang;
-                        tampilHarga.value = `Rp ${b.harga.toLocaleString('id-ID')}`;
-                        autocompleteList.classList.add('hidden');
-                        jumlahInput.focus(); 
+        searchInput.addEventListener('input', () => {
+            clearTimeout(timer); barangTerpilih = null; tampilHarga.value = '';
+            if (searchInput.value.length === 0) return autocompleteList.classList.add('hidden');
+            timer = setTimeout(async () => {
+                const res = await fetch(`/api/barang?search=${searchInput.value}`);
+                const barang = await res.json();
+                autocompleteList.innerHTML = '';
+                if (barang.length === 0) { autocompleteList.innerHTML = '<div class="p-3 text-gray-500 text-center">Tidak ditemukan</div>'; }
+                else {
+                    barang.forEach(b => {
+                        if(b.stok <= 0) return;
+                        const item = document.createElement('div');
+                        item.className = 'p-3 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer border-b dark:border-slate-800 flex justify-between';
+                        item.innerHTML = `<div><div class="font-bold dark:text-white">${b.nama_barang}</div><div class="text-xs text-gray-500">Stok: ${b.stok}</div></div><div class="font-semibold text-blue-600 dark:text-blue-400">Rp${b.harga.toLocaleString()}</div>`;
+                        item.onclick = () => { barangTerpilih = b; searchInput.value = b.nama_barang; tampilHarga.value = `Rp ${b.harga.toLocaleString()}`; autocompleteList.classList.add('hidden'); jumlahInput.focus(); };
+                        autocompleteList.appendChild(item);
                     });
-                    autocompleteList.appendChild(item);
-                });
-            }
-            autocompleteList.classList.remove('hidden');
-        }
-
-        document.getElementById('formTambah').addEventListener('submit', (e) => {
-            e.preventDefault();
-            if (!barangTerpilih) {
-                tampilkanPesan('Pilih barang dari daftar pencarian terlebih dahulu!', false);
-                return;
-            }
-
-            const jumlah = parseInt(jumlahInput.value);
-            const index = keranjang.findIndex(item => item.id_barang === barangTerpilih.id_barang);
-            
-            if (index !== -1) {
-                keranjang[index].jumlah += jumlah;
-                keranjang[index].subtotal = keranjang[index].jumlah * keranjang[index].harga;
-            } else {
-                keranjang.push({
-                    id_barang: barangTerpilih.id_barang,
-                    nama_barang: barangTerpilih.nama_barang,
-                    harga: barangTerpilih.harga,
-                    jumlah: jumlah,
-                    subtotal: barangTerpilih.harga * jumlah
-                });
-            }
-
-            barangTerpilih = null;
-            searchInput.value = '';
-            tampilHarga.value = '';
-            jumlahInput.value = '1';
-            searchInput.focus();
-
-            renderKeranjang();
+                }
+                autocompleteList.classList.remove('hidden');
+            }, 300);
         });
 
-        function renderKeranjang() {
-            daftarKeranjang.innerHTML = '';
-            let total = 0;
+        document.getElementById('formTambah').onsubmit = (e) => {
+            e.preventDefault();
+            if (!barangTerpilih) return alert('Pilih barang dulu!');
+            const idx = keranjang.findIndex(i => i.id_barang === barangTerpilih.id_barang);
+            if(idx !== -1) { keranjang[idx].jumlah += parseInt(jumlahInput.value); keranjang[idx].subtotal = keranjang[idx].jumlah * keranjang[idx].harga; }
+            else { keranjang.push({ id_barang: barangTerpilih.id_barang, nama_barang: barangTerpilih.nama_barang, harga: barangTerpilih.harga, jumlah: parseInt(jumlahInput.value), subtotal: barangTerpilih.harga * parseInt(jumlahInput.value) }); }
+            barangTerpilih = null; searchInput.value = ''; tampilHarga.value = ''; jumlahInput.value = '1'; render();
+        };
 
-            if (keranjang.length === 0) {
-                daftarKeranjang.innerHTML = '<p class="text-center text-gray-400 mt-10 italic">Resi masih kosong...</p>';
-                btnCheckout.disabled = true;
-            } else {
+        function render() {
+            daftarKeranjang.innerHTML = ''; let total = 0;
+            if (keranjang.length === 0) { daftarKeranjang.innerHTML = '<p class="text-center text-gray-400 mt-10 italic">Resi masih kosong...</p>'; btnCheckout.disabled = true; }
+            else {
                 btnCheckout.disabled = false;
-                keranjang.forEach((item, index) => {
+                keranjang.forEach((item, i) => {
                     total += item.subtotal;
-                    daftarKeranjang.innerHTML += `
-                        <div class="flex justify-between items-start border-b border-gray-100 dark:border-slate-700 pb-2">
-                            <div>
-                                <div class="font-bold text-gray-800 dark:text-gray-200">${item.nama_barang}</div>
-                                <div class="text-sm text-gray-500">${item.jumlah} x Rp${item.harga.toLocaleString('id-ID')}</div>
-                            </div>
-                            <div class="text-right">
-                                <div class="font-bold text-gray-800 dark:text-gray-200">Rp${item.subtotal.toLocaleString('id-ID')}</div>
-                                <button onclick="hapusItem(${index})" class="text-xs text-red-500 hover:text-red-700 underline mt-1">Hapus</button>
-                            </div>
-                        </div>
-                    `;
+                    daftarKeranjang.innerHTML += `<div class="flex justify-between border-b dark:border-slate-700 pb-2"><div><div class="font-bold dark:text-gray-200">${item.nama_barang}</div><div class="text-sm text-gray-500">${item.jumlah} x Rp${item.harga.toLocaleString()}</div></div><div class="text-right font-bold dark:text-gray-200">Rp${item.subtotal.toLocaleString()}<br><button onclick="hapus(${i})" class="text-xs text-red-500 underline">Hapus</button></div></div>`;
                 });
             }
-            grandTotalTxt.innerText = `Rp ${total.toLocaleString('id-ID')}`;
+            grandTotalTxt.innerText = `Rp ${total.toLocaleString()}`;
         }
+        window.hapus = (i) => { keranjang.splice(i, 1); render(); };
 
-        window.hapusItem = function(index) {
-            keranjang.splice(index, 1);
-            renderKeranjang();
-        }
-
-        btnCheckout.addEventListener('click', async () => {
-            btnCheckout.disabled = true;
-            btnCheckout.innerText = 'MEMPROSES...';
+        btnCheckout.onclick = async () => {
+            if(!confirm("Proses transaksi ini?")) return;
+            btnCheckout.disabled = true; btnCheckout.innerText = 'MEMPROSES...';
             let berhasil = 0;
             for (const item of keranjang) {
-                try {
-                    const res = await fetch('/api/transaksi', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id_barang: item.id_barang, jumlah: item.jumlah })
-                    });
-                    if(res.ok) berhasil++;
-                } catch (err) {
-                    console.error("Gagal memproses:", item.nama_barang);
-                }
+                const res = await fetch('/api/transaksi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_barang: item.id_barang, jumlah: item.jumlah }) });
+                if(res.ok) berhasil++;
             }
-
             if (berhasil === keranjang.length) {
-                alert(`TRANSAKSI SUKSES!\n${berhasil} jenis barang telah dibayar dan stok dipotong.`);
-                keranjang = []; 
-                renderKeranjang();
-            } else {
-                alert("Peringatan: Sebagian barang gagal diproses (mungkin stok habis di tengah transaksi).");
-            }
+                siapkanStruk();
+                window.print(); // OTOMATIS CETAK
+                keranjang = []; render();
+            } else { alert("Beberapa barang gagal diproses."); }
             btnCheckout.innerText = 'BAYAR SEKARANG';
-        });
+        };
 
-        function tampilkanPesan(pesan, isSuccess) {
-            alertBox.classList.remove('hidden', 'bg-red-100', 'text-red-700');
-            alertBox.classList.add('bg-red-100', 'text-red-700');
-            alertBox.innerText = pesan;
-            setTimeout(() => alertBox.classList.add('hidden'), 3000);
+        function siapkanStruk() {
+            document.getElementById('p_namaKasir').innerText = localStorage.getItem('username');
+            document.getElementById('p_waktu').innerText = new Date().toLocaleString();
+            const list = document.getElementById('p_listBarang');
+            list.innerHTML = '';
+            keranjang.forEach(item => {
+                list.innerHTML += `<tr><td>${item.nama_barang}</td><td>${item.jumlah}</td><td>Rp${item.subtotal.toLocaleString()}</td></tr>`;
+            });
+            document.getElementById('p_grandTotal').innerText = grandTotalTxt.innerText;
         }
     </script>
 </body>
