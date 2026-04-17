@@ -44,19 +44,16 @@
     </div>
 
     <script>
-        // Cek Login
         if(localStorage.getItem('role') !== 'management') window.location.href = '/';
         
         function logout() { localStorage.clear(); window.location.href = '/'; }
 
         async function loadData() {
-            // Ambil Statistik
             const resStats = await fetch('/api/stats');
             const stats = await resStats.json();
             document.getElementById('totalPendapatan').innerText = 'Rp ' + (stats.total_pendapatan || 0).toLocaleString();
             document.getElementById('totalTransaksi').innerText = stats.total_transaksi || 0;
 
-            // Ambil History
             const resHist = await fetch('/api/history');
             const history = await resHist.json();
             const table = document.getElementById('historyTable');

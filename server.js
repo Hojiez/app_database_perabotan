@@ -8,12 +8,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Konfigurasi Database
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: '',
-    database: 'database_toko' // Pastikan nama ini sesuai
+    database: 'database_toko'
 });
 
 db.connect(err => {
@@ -21,7 +20,6 @@ db.connect(err => {
     else console.log('Database MySQL Terhubung!');
 });
 
-// 1. Endpoint Login
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     db.query("SELECT * FROM users WHERE username = ? AND password = ?", [username, password], (err, results) => {
@@ -34,7 +32,6 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// 2. Endpoint Ambil & Cari Barang (Diperbarui dengan Search)
 app.get('/api/barang', (req, res) => {
     const search = req.query.search || '';
     db.query("SELECT * FROM barang WHERE nama_barang LIKE ?", [`%${search}%`], (err, results) => {
@@ -43,7 +40,6 @@ app.get('/api/barang', (req, res) => {
     });
 });
 
-// 3. Endpoint Transaksi (Tetap menggunakan Stored Procedure)
 app.post('/api/transaksi', (req, res) => {
     const { id_barang, jumlah } = req.body;
     db.query("CALL sp_CatatTransaksi(?, ?)", [id_barang, jumlah], (err) => {
@@ -52,7 +48,6 @@ app.post('/api/transaksi', (req, res) => {
     });
 });
 
-// 4. Endpoint History Transaksi (Untuk Management)
 app.get('/api/history', (req, res) => {
     const query = `
         SELECT t.id_transaksi, b.nama_barang, t.jumlah, t.total_harga, t.waktu_transaksi 
@@ -66,7 +61,6 @@ app.get('/api/history', (req, res) => {
     });
 });
 
-// 5. Endpoint Statistik Pendapatan (Untuk Management)
 app.get('/api/stats', (req, res) => {
     const query = "SELECT SUM(total_harga) as total_pendapatan, COUNT(id_transaksi) as total_transaksi FROM transaksi";
     db.query(query, (err, results) => {
