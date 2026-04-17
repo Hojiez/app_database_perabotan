@@ -40,7 +40,6 @@
             const data = await res.json();
 
             if (data.success) {
-                // Simpan sesi dan arahkan
                 localStorage.setItem('role', data.role);
                 localStorage.setItem('username', data.username);
                 window.location.href = data.role === 'kasir' ? '/kasir.html' : '/admin.html';
