@@ -2,81 +2,163 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Management Dashboard</title>
+    <title>Management - Toko Perabotan</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Konfigurasi Tailwind untuk Dark Mode
+        tailwind.config = { darkMode: 'class' }
+        
+        // Cek preferensi tema saat load
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
 </head>
-<body class="bg-slate-100 p-8">
-    <div class="max-w-5xl mx-auto">
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-3xl font-bold text-gray-800">Dashboard Management</h1>
-            <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded font-bold hover:bg-red-600">Logout</button>
-        </div>
-
-        <div class="grid grid-cols-2 gap-6 mb-8">
-            <div class="bg-green-500 text-white p-6 rounded-lg shadow">
-                <h3 class="text-lg opacity-80">Total Pendapatan</h3>
-                <p id="totalPendapatan" class="text-4xl font-bold mt-2">Rp 0</p>
-            </div>
-            <div class="bg-blue-500 text-white p-6 rounded-lg shadow">
-                <h3 class="text-lg opacity-80">Total Transaksi</h3>
-                <p id="totalTransaksi" class="text-4xl font-bold mt-2">0</p>
+<body class="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+    <div class="max-w-6xl mx-auto p-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold">Dashboard Manajemen</h1>
+            <div class="flex items-center gap-4">
+                <button onclick="toggleTheme()" class="p-2 bg-slate-200 dark:bg-slate-700 rounded-full">
+                    <span class="dark:hidden">🌙 Dark Mode</span>
+                    <span class="hidden dark:inline">☀️ Light Mode</span>
+                </button>
+                <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded">Logout</button>
             </div>
         </div>
 
-        <div class="bg-white p-6 rounded-lg shadow">
-            <h2 class="text-xl font-bold mb-4 border-b pb-2">Riwayat Transaksi Penjualan</h2>
+        <button onclick="openModal()" class="mb-4 bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700">+ Tambah Barang Baru</button>
+
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow">
+            <h2 class="text-xl font-bold mb-4 border-b pb-2">Katalog Barang</h2>
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left">
                     <thead>
-                        <tr class="bg-gray-100 border-b">
-                            <th class="p-3">ID Trx</th>
-                            <th class="p-3">Waktu</th>
-                            <th class="p-3">Nama Perabotan</th>
-                            <th class="p-3">Qty</th>
-                            <th class="p-3">Total Harga</th>
+                        <tr class="bg-gray-100 dark:bg-slate-700">
+                            <th class="p-3">ID</th>
+                            <th class="p-3">Nama Barang</th>
+                            <th class="p-3">Harga</th>
+                            <th class="p-3">Stok</th>
+                            <th class="p-3">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody id="historyTable">
-                        </tbody>
+                    <tbody id="katalogTable"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
+    <div id="crudModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
+        <div class="bg-white dark:bg-slate-800 p-8 rounded-lg w-96 shadow-xl">
+            <h3 id="modalTitle" class="text-xl font-bold mb-4">Tambah Barang</h3>
+            <form id="barangForm" class="space-y-4">
+                <input type="text" id="id_barang" placeholder="ID Barang (cth: BRG020)" class="w-full p-2 border rounded dark:bg-slate-700" required>
+                <input type="text" id="nama_barang" placeholder="Nama Barang" class="w-full p-2 border rounded dark:bg-slate-700" required>
+                <input type="number" id="harga" placeholder="Harga" class="w-full p-2 border rounded dark:bg-slate-700" required>
+                <input type="number" id="stok" placeholder="Stok Awal" class="w-full p-2 border rounded dark:bg-slate-700" required>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-gray-400 text-white py-2 rounded">Batal</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         if(localStorage.getItem('role') !== 'management') window.location.href = '/';
-        
         function logout() { localStorage.clear(); window.location.href = '/'; }
 
-        async function loadData() {
-            const resStats = await fetch('/api/stats');
-            const stats = await resStats.json();
-            document.getElementById('totalPendapatan').innerText = 'Rp ' + (stats.total_pendapatan || 0).toLocaleString();
-            document.getElementById('totalTransaksi').innerText = stats.total_transaksi || 0;
-
-            const resHist = await fetch('/api/history');
-            const history = await resHist.json();
-            const table = document.getElementById('historyTable');
-            
-            if (history.length === 0) {
-                table.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-500">Belum ada transaksi</td></tr>';
+        // LOGIKA DARK MODE
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.theme = 'light';
             } else {
-                history.forEach(trx => {
-                    const date = new Date(trx.waktu_transaksi).toLocaleString('id-ID');
-                    table.innerHTML += `
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="p-3 font-mono text-sm">#${trx.id_transaksi}</td>
-                            <td class="p-3 text-sm text-gray-600">${date}</td>
-                            <td class="p-3 font-semibold">${trx.nama_barang}</td>
-                            <td class="p-3 text-center">${trx.jumlah}</td>
-                            <td class="p-3 font-bold text-green-600">Rp ${trx.total_harga.toLocaleString()}</td>
-                        </tr>
-                    `;
-                });
+                document.documentElement.classList.add('dark');
+                localStorage.theme = 'dark';
             }
         }
 
-        loadData();
+        let editMode = false;
+
+        async function loadKatalog() {
+            const res = await fetch('/api/barang');
+            const data = await res.json();
+            const table = document.getElementById('katalogTable');
+            table.innerHTML = '';
+            data.forEach(b => {
+                table.innerHTML += `
+                    <tr class="border-b dark:border-slate-700">
+                        <td class="p-3 font-mono">${b.id_barang}</td>
+                        <td class="p-3 font-bold">${b.nama_barang}</td>
+                        <td class="p-3">Rp ${b.harga.toLocaleString()}</td>
+                        <td class="p-3">${b.stok}</td>
+                        <td class="p-3 flex gap-2">
+                            <button onclick="prepareEdit('${b.id_barang}', '${b.nama_barang}', ${b.harga}, ${b.stok})" class="text-blue-500 hover:underline">Edit</button>
+                            <button onclick="hapusBarang('${b.id_barang}')" class="text-red-500 hover:underline">Hapus</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openModal() {
+            editMode = false;
+            document.getElementById('barangForm').reset();
+            document.getElementById('id_barang').disabled = false;
+            document.getElementById('modalTitle').innerText = 'Tambah Barang Baru';
+            document.getElementById('crudModal').classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('crudModal').classList.add('hidden'); }
+
+        function prepareEdit(id, nama, harga, stok) {
+            editMode = true;
+            document.getElementById('id_barang').value = id;
+            document.getElementById('id_barang').disabled = true; // ID tidak boleh diganti
+            document.getElementById('nama_barang').value = nama;
+            document.getElementById('harga').value = harga;
+            document.getElementById('stok').value = stok;
+            document.getElementById('modalTitle').innerText = 'Edit Data Barang';
+            document.getElementById('crudModal').classList.remove('hidden');
+        }
+
+        document.getElementById('barangForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('id_barang').value;
+            const data = {
+                nama_barang: document.getElementById('nama_barang').value,
+                harga: document.getElementById('harga').value,
+                stok: document.getElementById('stok').value,
+                id_barang: id
+            };
+
+            const url = editMode ? `/api/barang/${id}` : '/api/barang/add';
+            const method = editMode ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert('Berhasil disimpan!');
+                closeModal();
+                loadKatalog();
+            }
+        });
+
+        async function hapusBarang(id) {
+            if(confirm('Yakin ingin menghapus barang ini?')) {
+                const res = await fetch(`/api/barang/${id}`, { method: 'DELETE' });
+                if(res.ok) loadKatalog();
+            }
+        }
+
+        loadKatalog();
     </script>
 </body>
 </html>

@@ -69,4 +69,29 @@ app.get('/api/stats', (req, res) => {
     });
 });
 
+app.post('/api/barang/add', (req, res) => {
+    const { id_barang, nama_barang, harga, stok } = req.body;
+    const query = "INSERT INTO barang (id_barang, nama_barang, harga, stok) VALUES (?, ?, ?, ?)";
+    db.query(query, [id_barang, nama_barang, harga, stok], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Barang berhasil ditambahkan!' });
+    });
+});
+
+app.put('/api/barang/:id', (req, res) => {
+    const { nama_barang, harga, stok } = req.body;
+    const query = "UPDATE barang SET nama_barang = ?, harga = ?, stok = ? WHERE id_barang = ?";
+    db.query(query, [nama_barang, harga, stok, req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Data barang berhasil diperbarui!' });
+    });
+});
+
+app.delete('/api/barang/:id', (req, res) => {
+    const query = "DELETE FROM barang WHERE id_barang = ?";
+    db.query(query, [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Barang telah dihapus!' });
+    });
+});
 app.listen(3000, () => console.log(`Server berjalan di http://localhost:3000`));
