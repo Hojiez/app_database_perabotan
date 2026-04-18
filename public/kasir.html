@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Kasir Panel - Toko Perabotan</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         tailwind.config = { darkMode: 'class' }
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -13,14 +14,13 @@
         }
     </script>
     <style>
-        #autocompleteList { max-height: 200px; overflow-y: auto; }
+        #autocompleteList { max-height: 250px; overflow-y: auto; }
         .struk-kertas { background-image: radial-gradient(circle at top, transparent 4px, white 5px); background-size: 10px 10px; background-position: top; }
         .dark .struk-kertas { background-image: radial-gradient(circle at top, transparent 4px, #1e293b 5px); background-color: #1e293b; }
 
-        /* CSS KHUSUS PRINT */
         @media print {
-            body * { visibility: hidden; } /* Sembunyikan semua elemen */
-            #areaCetak, #areaCetak * { visibility: visible; } /* Hanya tampilkan area cetak */
+            body * { visibility: hidden; }
+            #areaCetak, #areaCetak * { visibility: visible; }
             #areaCetak { position: absolute; left: 0; top: 0; width: 100%; }
             .no-print { display: none !important; }
         }
@@ -39,71 +39,86 @@
     </div>
 
     <div class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start overflow-hidden no-print">
-        <div class="lg:col-span-7 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg">
+        <div class="lg:col-span-7 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg h-full flex flex-col">
             <h2 class="text-xl font-bold mb-4 text-gray-700 dark:text-gray-200 border-b dark:border-slate-700 pb-2">Tambah Barang</h2>
             <form id="formTambah" class="space-y-4">
                 <div class="relative">
-                    <label class="block font-semibold mb-1 text-gray-600 dark:text-gray-400">Pencarian Barang</label>
-                    <input type="text" id="searchBar" placeholder="Ketik nama perabotan..." class="w-full p-3 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus:border-blue-500 dark:bg-slate-900 dark:text-white focus:outline-none" autocomplete="off">
-                    <div id="autocompleteList" class="absolute z-10 w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl mt-1 hidden"></div>
+                    <label class="block font-semibold mb-1 text-gray-600 dark:text-gray-400 italic text-sm">Cari barang (Tekan "/" untuk fokus)</label>
+                    <input type="text" id="searchBar" placeholder="Ketik nama perabotan..." class="w-full p-4 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus:border-blue-500 dark:bg-slate-900 dark:text-white focus:outline-none transition-all" autocomplete="off">
+                    <div id="autocompleteList" class="absolute z-10 w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-2xl mt-1 hidden overflow-hidden"></div>
                 </div>
+                
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block font-semibold mb-1 text-gray-600 dark:text-gray-400">Harga Satuan</label>
-                        <input type="text" id="tampilHarga" class="w-full p-3 bg-gray-100 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-500 font-semibold" readonly placeholder="Rp 0">
+                        <input type="text" id="tampilHarga" class="w-full p-3 bg-gray-100 dark:bg-slate-950 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-500 font-bold" readonly placeholder="Rp 0">
                     </div>
                     <div>
-                        <label class="block font-semibold mb-1 text-gray-600 dark:text-gray-400">Jumlah</label>
+                        <label class="block font-semibold mb-1 text-gray-600 dark:text-gray-400">Jumlah Manual</label>
                         <input type="number" id="jumlahBeli" min="1" value="1" class="w-full p-3 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus:border-blue-500 dark:bg-slate-900 dark:text-white focus:outline-none" required>
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-2 border-blue-500 font-bold text-lg py-3 rounded-lg hover:bg-blue-600 hover:text-white transition mt-4">+ Tambah ke Resi</button>
+                <button type="submit" class="w-full bg-blue-600 text-white font-bold text-lg py-3 rounded-lg hover:bg-blue-700 transition mt-4 shadow-lg shadow-blue-500/30">+ Tambah ke Keranjang</button>
             </form>
         </div>
 
         <div class="lg:col-span-5 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg relative struk-kertas flex flex-col h-full overflow-hidden">
             <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-white text-center border-b-2 border-dashed border-gray-200 dark:border-slate-700 pb-3">RESI PENJUALAN</h2>
-            <div id="daftarKeranjang" class="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 italic text-gray-400 text-center mt-10">Resi masih kosong...</div>
-            <div class="border-t-2 border-dashed border-gray-300 dark:border-slate-700 pt-4">
+            <div id="daftarKeranjang" class="flex-1 overflow-y-auto mb-4 space-y-4 pr-2">
+                </div>
+            <div class="border-t-2 border-dashed border-gray-300 dark:border-slate-700 pt-4 bg-white dark:bg-slate-800">
                 <div class="flex justify-between items-center mb-6">
                     <span class="text-lg font-bold text-gray-600 dark:text-gray-400">TOTAL:</span>
-                    <span id="grandTotal" class="text-2xl font-black text-green-600 dark:text-green-400">Rp 0</span>
+                    <span id="grandTotal" class="text-3xl font-black text-green-600 dark:text-green-400">Rp 0</span>
                 </div>
-                <button id="btnCheckout" class="w-full bg-green-500 text-white font-bold text-xl py-4 rounded-lg shadow-lg hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>BAYAR SEKARANG</button>
+                <button id="btnCheckout" class="w-full bg-green-500 text-white font-bold text-xl py-4 rounded-xl shadow-lg shadow-green-500/30 hover:bg-green-600 transition disabled:opacity-50 disabled:grayscale" disabled>BAYAR SEKARANG</button>
             </div>
         </div>
     </div>
 
     <div id="areaCetak" class="hidden font-mono p-4 text-black bg-white">
-        <div class="text-center mb-4">
+        <div class="text-center mb-4 border-b border-black border-dashed pb-2">
             <h2 class="text-xl font-bold uppercase">Toko Perabotan Bintang</h2>
-            <p class="text-sm">Jl. Perabotan No. 123, Malang</p>
-            <p class="text-xs">Telp: 0812-3456-7890</p>
+            <p class="text-xs">Jl. Perabotan No. 123, Malang | 0812-3456-7890</p>
         </div>
-        <div class="border-t border-b border-black border-dashed py-2 mb-4 text-sm">
+        <div class="text-xs mb-4">
             <p>Kasir: <span id="p_namaKasir"></span></p>
             <p>Waktu: <span id="p_waktu"></span></p>
         </div>
-        <table class="w-full text-sm mb-4">
+        <table class="w-full text-xs mb-4">
             <thead><tr class="text-left border-b border-black border-dashed"><th>Item</th><th>Qty</th><th>Subtotal</th></tr></thead>
             <tbody id="p_listBarang"></tbody>
         </table>
         <div class="border-t border-black border-dashed pt-2 text-right">
             <p class="font-bold">TOTAL: <span id="p_grandTotal"></span></p>
         </div>
-        <p class="text-center text-xs mt-8">*** Terima Kasih Atas Kunjungan Anda ***</p>
+        <p class="text-center text-[10px] mt-8 italic">*** Terima Kasih Atas Kunjungan Anda ***</p>
     </div>
 
     <script>
         if(localStorage.getItem('role') !== 'kasir') window.location.href = '/';
         function logout() { localStorage.clear(); window.location.href = '/'; }
+        
         function toggleTheme() {
             document.documentElement.classList.toggle('dark');
             localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         }
 
+        const swalConfig = () => ({
+            background: document.documentElement.classList.contains('dark') ? '#1e293b' : '#fff',
+            color: document.documentElement.classList.contains('dark') ? '#fff' : '#000'
+        });
+
         let barangTerpilih = null, keranjang = JSON.parse(localStorage.getItem('keranjang')) || [];
         const searchInput = document.getElementById('searchBar'), autocompleteList = document.getElementById('autocompleteList'), tampilHarga = document.getElementById('tampilHarga'), jumlahInput = document.getElementById('jumlahBeli'), daftarKeranjang = document.getElementById('daftarKeranjang'), grandTotalTxt = document.getElementById('grandTotal'), btnCheckout = document.getElementById('btnCheckout');
+
+        // KEYBOARD SHORTCUT
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '/' && document.activeElement !== searchInput) {
+                e.preventDefault();
+                searchInput.focus();
+            }
+        });
 
         let timer;
         searchInput.addEventListener('input', () => {
@@ -118,9 +133,17 @@
                     barang.forEach(b => {
                         if(b.stok <= 0) return;
                         const item = document.createElement('div');
-                        item.className = 'p-3 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer border-b dark:border-slate-800 flex justify-between';
-                        item.innerHTML = `<div><div class="font-bold dark:text-white">${b.nama_barang}</div><div class="text-xs text-gray-500">Stok: ${b.stok}</div></div><div class="font-semibold text-blue-600 dark:text-blue-400">Rp${b.harga.toLocaleString()}</div>`;
-                        item.onclick = () => { barangTerpilih = b; searchInput.value = b.nama_barang; tampilHarga.value = `Rp ${b.harga.toLocaleString()}`; autocompleteList.classList.add('hidden'); jumlahInput.focus(); };
+                        item.className = 'p-3 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer border-b dark:border-slate-800 flex justify-between items-center transition-colors';
+                        item.innerHTML = `<div><div class="font-bold dark:text-white">${b.nama_barang}</div><div class="text-xs text-gray-400">Sisa: ${b.stok}</div></div><div class="font-bold text-blue-600 dark:text-blue-400">Rp${b.harga.toLocaleString()}</div>`;
+                        
+                        item.onclick = () => {
+                            // SMART FOCUS & ADD
+                            barangTerpilih = b;
+                            tambahItem(1);
+                            searchInput.value = '';
+                            autocompleteList.classList.add('hidden');
+                            searchInput.focus();
+                        };
                         autocompleteList.appendChild(item);
                     });
                 }
@@ -130,42 +153,107 @@
 
         document.getElementById('formTambah').onsubmit = (e) => {
             e.preventDefault();
-            if (!barangTerpilih) return alert('Pilih barang dulu!');
+            if (!barangTerpilih) return Swal.fire({...swalConfig(), icon: 'warning', title: 'Pilih barang dulu!'});
+            tambahItem(parseInt(jumlahInput.value));
+            barangTerpilih = null; searchInput.value = ''; tampilHarga.value = ''; jumlahInput.value = '1';
+        };
+
+        function tambahItem(qty) {
             const idx = keranjang.findIndex(i => i.id_barang === barangTerpilih.id_barang);
-            if(idx !== -1) { keranjang[idx].jumlah += parseInt(jumlahInput.value); keranjang[idx].subtotal = keranjang[idx].jumlah * keranjang[idx].harga; }
-            else { keranjang.push({ id_barang: barangTerpilih.id_barang, nama_barang: barangTerpilih.nama_barang, harga: barangTerpilih.harga, jumlah: parseInt(jumlahInput.value), subtotal: barangTerpilih.harga * parseInt(jumlahInput.value) }); }
-            barangTerpilih = null; searchInput.value = ''; tampilHarga.value = ''; jumlahInput.value = '1'; render(); 
+            if(idx !== -1) { 
+                keranjang[idx].jumlah += qty; 
+                keranjang[idx].subtotal = keranjang[idx].jumlah * keranjang[idx].harga; 
+            } else { 
+                keranjang.push({ 
+                    id_barang: barangTerpilih.id_barang, 
+                    nama_barang: barangTerpilih.nama_barang, 
+                    harga: barangTerpilih.harga, 
+                    jumlah: qty, 
+                    subtotal: barangTerpilih.harga * qty 
+                }); 
+            }
+            render();
+            localStorage.setItem('keranjang', JSON.stringify(keranjang));
+            
+            // Mini Toast
+            Swal.fire({
+                toast: true, position: 'top-end', showConfirmButton: false, timer: 1000, icon: 'success', title: 'Ditambahkan', ...swalConfig()
+            });
+        }
+
+        window.updateQty = (i, delta) => {
+            keranjang[i].jumlah += delta;
+            if (keranjang[i].jumlah <= 0) return hapus(i);
+            keranjang[i].subtotal = keranjang[i].jumlah * keranjang[i].harga;
+            render();
             localStorage.setItem('keranjang', JSON.stringify(keranjang));
         };
 
-        function render() { 
+        function render() {
             daftarKeranjang.innerHTML = ''; let total = 0;
-            if (keranjang.length === 0) { daftarKeranjang.innerHTML = '<p class="text-center text-gray-400 mt-10 italic">Resi masih kosong...</p>'; btnCheckout.disabled = true; }
-            else {
+            if (keranjang.length === 0) { 
+                daftarKeranjang.innerHTML = `<div class="flex flex-col items-center justify-center opacity-20 py-10"><svg class="w-20 h-20 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg><p class="italic font-bold">Resi Kosong</p></div>`; 
+                btnCheckout.disabled = true; 
+            } else {
                 btnCheckout.disabled = false;
                 keranjang.forEach((item, i) => {
                     total += item.subtotal;
-                    daftarKeranjang.innerHTML += `<div class="flex justify-between border-b dark:border-slate-700 pb-2"><div><div class="font-bold dark:text-gray-200">${item.nama_barang}</div><div class="text-sm text-gray-500">${item.jumlah} x Rp${item.harga.toLocaleString()}</div></div><div class="text-right font-bold dark:text-gray-200">Rp${item.subtotal.toLocaleString()}<br><button onclick="hapus(${i})" class="text-xs text-red-500 underline">Hapus</button></div></div>`;
+                    daftarKeranjang.innerHTML += `
+                        <div class="flex justify-between items-center border-b dark:border-slate-700 pb-3">
+                            <div class="flex-1">
+                                <div class="font-bold dark:text-gray-100">${item.nama_barang}</div>
+                                <div class="flex items-center gap-2 mt-1">
+                                    <button onclick="updateQty(${i}, -1)" class="w-7 h-7 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900 transition">-</button>
+                                    <span class="w-8 text-center font-mono dark:text-white">${item.jumlah}</span>
+                                    <button onclick="updateQty(${i}, 1)" class="w-7 h-7 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center hover:bg-green-100 dark:hover:bg-green-900 transition">+</button>
+                                    <span class="text-xs text-gray-400 ml-2">@ ${item.harga.toLocaleString()}</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-black text-blue-600 dark:text-blue-400">Rp${item.subtotal.toLocaleString()}</div>
+                                <button onclick="hapus(${i})" class="text-[10px] text-red-500 uppercase font-bold tracking-tighter opacity-50 hover:opacity-100">Hapus</button>
+                            </div>
+                        </div>`;
                 });
             }
             grandTotalTxt.innerText = `Rp ${total.toLocaleString()}`;
         }
-        window.hapus = (i) => { keranjang.splice(i, 1); render(); };
+
+        window.hapus = (i) => { 
+            keranjang.splice(i, 1); 
+            render(); 
+            localStorage.setItem('keranjang', JSON.stringify(keranjang));
+        };
 
         btnCheckout.onclick = async () => {
-            if(!confirm("Proses transaksi ini?")) return;
-            btnCheckout.disabled = true; btnCheckout.innerText = 'MEMPROSES...';
+            const result = await Swal.fire({
+                title: 'Konfirmasi Bayar',
+                text: `Total belanja: ${grandTotalTxt.innerText}`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Bayar Sekarang',
+                cancelButtonText: 'Batal',
+                ...swalConfig()
+            });
+
+            if(!result.isConfirmed) return;
+
+            btnCheckout.disabled = true; btnCheckout.innerText = 'PROSES...';
             let berhasil = 0;
             for (const item of keranjang) {
                 const res = await fetch('/api/transaksi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_barang: item.id_barang, jumlah: item.jumlah }) });
                 if(res.ok) berhasil++;
             }
+
             if (berhasil === keranjang.length) {
                 siapkanStruk();
-                window.print(); // OTOMATIS CETAK
-                keranjang = []; render(); 
+                await Swal.fire({ icon: 'success', title: 'Pembayaran Sukses', text: 'Struk akan segera dicetak.', timer: 2000, showConfirmButton: false, ...swalConfig() });
+                window.print();
+                keranjang = []; render();
                 localStorage.removeItem('keranjang');
-            } else { alert("Beberapa barang gagal diproses."); }
+            } else { 
+                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Beberapa barang gagal diproses.', ...swalConfig() }); 
+            }
             btnCheckout.innerText = 'BAYAR SEKARANG';
         };
 
@@ -175,12 +263,12 @@
             const list = document.getElementById('p_listBarang');
             list.innerHTML = '';
             keranjang.forEach(item => {
-                list.innerHTML += `<tr><td>${item.nama_barang}</td><td>${item.jumlah}</td><td>Rp${item.subtotal.toLocaleString()}</td></tr>`;
+                list.innerHTML += `<tr><td>${item.nama_barang}</td><td class="text-center">${item.jumlah}</td><td>Rp${item.subtotal.toLocaleString()}</td></tr>`;
             });
             document.getElementById('p_grandTotal').innerText = grandTotalTxt.innerText;
         }
 
-        render(); // Initial render on page load
+        render();
     </script>
 </body>
 </html>

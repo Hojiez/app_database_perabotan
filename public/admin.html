@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Management - Toko Perabotan</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script> 
     <script> 
         tailwind.config = { darkMode: 'class' } 
-        
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark')
         } else {
@@ -14,51 +14,91 @@
         }
     </script>
 </head>
-<body class="bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100 transition-colors duration-300">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 min-h-screen">
     <div class="max-w-6xl mx-auto p-8">
         <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold">Dashboard Manajemen</h1>
+            <div>
+                <h1 class="text-3xl font-black tracking-tight">Dashboard Manajemen</h1>
+                <p class="text-slate-500 dark:text-slate-400">Pantau performa Toko Perabotan Bintang</p>
+            </div>
             <div class="flex items-center gap-4">
-                <button onclick="toggleTheme()" class="p-2 bg-slate-200 dark:bg-slate-700 rounded-full">
-                    <span class="dark:hidden">🌙 Dark Mode</span>
-                    <span class="hidden dark:inline">☀️ Light Mode</span>
+                <button onclick="toggleTheme()" class="p-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border dark:border-slate-700">
+                    <span class="dark:hidden">🌙 Mode Gelap</span>
+                    <span class="hidden dark:inline">☀️ Mode Terang</span>
                 </button>
-                <button onclick="logout()" class="bg-red-500 text-white px-4 py-2 rounded">Logout</button>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-5 py-2 rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all text-sm">Logout</button>
             </div>
         </div>
 
-        <button onclick="openModal()" class="mb-4 bg-blue-600 text-white px-6 py-2 rounded font-bold hover:bg-blue-700">+ Tambah Barang Baru</button>
-
-        <div class="bg-white dark:bg-slate-800 p-6 rounded-lg shadow">
-            <h2 class="text-xl font-bold mb-4 border-b pb-2">Katalog Barang</h2>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left">
-                    <thead>
-                        <tr class="bg-gray-100 dark:bg-slate-700">
-                            <th class="p-3">ID</th>
-                            <th class="p-3">Nama Barang</th>
-                            <th class="p-3">Harga</th>
-                            <th class="p-3">Stok</th>
-                            <th class="p-3">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="katalogTable"></tbody>
-                </table>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-white">
+            <div class="bg-blue-600 p-6 rounded-2xl shadow-xl shadow-blue-500/20">
+                <p class="opacity-80 text-sm font-semibold uppercase">Total Pendapatan</p>
+                <h3 id="statTotalRevenue" class="text-3xl font-black mt-1">Rp 0</h3>
             </div>
+            <div class="bg-emerald-600 p-6 rounded-2xl shadow-xl shadow-emerald-500/20">
+                <p class="opacity-80 text-sm font-semibold uppercase">Total Penjualan</p>
+                <h3 id="statTotalSales" class="text-3xl font-black mt-1">0</h3>
+            </div>
+            <div class="bg-orange-600 p-6 rounded-2xl shadow-xl shadow-orange-500/20">
+                <p class="opacity-80 text-sm font-semibold uppercase">Stok Menipis (< 5)</p>
+                <h3 id="statLowStock" class="text-3xl font-black mt-1">0</h3>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-stretch">
+            <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border dark:border-slate-800">
+                <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <span class="w-2 h-6 bg-blue-500 rounded-full"></span>
+                    Trend Pendapatan (7 Hari Terakhir)
+                </h2>
+                <div class="h-64">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border dark:border-slate-800 flex flex-col">
+                <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <span class="w-2 h-6 bg-amber-500 rounded-full"></span>
+                    Produk Terlaris
+                </h2>
+                <div id="topSellingList" class="space-y-4 flex-1">
+                    <p class="text-slate-400 text-sm italic">Memuat data...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">Katalog Barang</h2>
+            <button onclick="openModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20">+ Tambah Barang</button>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border dark:border-slate-800 overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 text-sm uppercase">
+                        <th class="p-4">ID</th>
+                        <th class="p-4">Nama Barang</th>
+                        <th class="p-4">Harga</th>
+                        <th class="p-4 text-center">Stok</th>
+                        <th class="p-4 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="katalogTable" class="divide-y dark:divide-slate-800"></tbody>
+            </table>
         </div>
     </div>
 
-    <div id="crudModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center">
-        <div class="bg-white dark:bg-slate-800 p-8 rounded-lg w-96 shadow-xl">
-            <h3 id="modalTitle" class="text-xl font-bold mb-4">Tambah Barang</h3>
+    <div id="crudModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl w-full max-w-md shadow-2xl border dark:border-slate-800">
+            <h3 id="modalTitle" class="text-2xl font-bold mb-6">Tambah Barang</h3>
             <form id="barangForm" class="space-y-4">
-                <input type="text" id="id_barang" placeholder="ID Barang (cth: BRG020)" class="w-full p-2 border rounded dark:bg-slate-700" required>
-                <input type="text" id="nama_barang" placeholder="Nama Barang" class="w-full p-2 border rounded dark:bg-slate-700" required>
-                <input type="number" id="harga" placeholder="Harga" class="w-full p-2 border rounded dark:bg-slate-700" required>
-                <input type="number" id="stok" placeholder="Stok Awal" class="w-full p-2 border rounded dark:bg-slate-700" required>
-                <div class="flex gap-2">
-                    <button type="button" onclick="closeModal()" class="flex-1 bg-gray-400 text-white py-2 rounded">Batal</button>
-                    <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded">Simpan</button>
+                <input type="text" id="id_barang" placeholder="ID Barang (cth: BRG020)" class="w-full p-3 border rounded-xl dark:bg-slate-950 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                <input type="text" id="nama_barang" placeholder="Nama Barang" class="w-full p-3 border rounded-xl dark:bg-slate-950 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                <input type="number" id="harga" placeholder="Harga" class="w-full p-3 border rounded-xl dark:bg-slate-950 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                <input type="number" id="stok" placeholder="Stok Awal" class="w-full p-3 border rounded-xl dark:bg-slate-950 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="closeModal()" class="flex-1 py-3 font-bold text-slate-500">Batal</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-500/20">Simpan</button>
                 </div>
             </form>
         </div>
@@ -68,18 +108,56 @@
         if(localStorage.getItem('role') !== 'management') window.location.href = '/';
         function logout() { localStorage.clear(); window.location.href = '/'; }
 
-        
         function toggleTheme() {
-            if (document.documentElement.classList.contains('dark')) {
-                document.documentElement.classList.remove('dark');
-                localStorage.theme = 'light';
-            } else {
-                document.documentElement.classList.add('dark');
-                localStorage.theme = 'dark';
-            }
+            document.documentElement.classList.toggle('dark');
+            localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+            renderChart();
+            loadTopSelling(); // Refresh styling top selling
         }
 
         let editMode = false;
+        let chartInstance = null;
+
+        async function loadAdminStats() {
+            const res = await fetch('/api/admin-stats');
+            const data = await res.json();
+            document.getElementById('statTotalRevenue').innerText = `Rp ${parseInt(data.total_revenue || 0).toLocaleString()}`;
+            document.getElementById('statTotalSales').innerText = data.total_sales;
+            document.getElementById('statLowStock').innerText = data.low_stock_count;
+        }
+
+        async function loadTopSelling() {
+            const res = await fetch('/api/top-selling');
+            const data = await res.json();
+            const list = document.getElementById('topSellingList');
+            list.innerHTML = '';
+
+            if (data.length === 0) {
+                list.innerHTML = '<p class="text-slate-400 text-sm italic">Belum ada data</p>';
+                return;
+            }
+
+            const medals = ['bg-amber-500', 'bg-slate-300 dark:bg-slate-500', 'bg-orange-400'];
+            data.forEach((item, i) => {
+                list.innerHTML += `
+                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border dark:border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <div class="${medals[i] || 'bg-blue-500'} text-white w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shadow-sm">
+                                ${i + 1}
+                            </div>
+                            <div>
+                                <p class="font-bold text-sm dark:text-gray-100">${item.nama_barang}</p>
+                                <p class="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Fast Moving</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-lg font-black text-slate-800 dark:text-white">${item.total_terjual}</p>
+                            <p class="text-[10px] text-slate-400 uppercase font-bold">Unit</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
 
         async function loadKatalog() {
             const res = await fetch('/api/barang');
@@ -87,76 +165,92 @@
             const table = document.getElementById('katalogTable');
             table.innerHTML = '';
             data.forEach(b => {
+                const isLow = b.stok < 5;
                 table.innerHTML += `
-                    <tr class="border-b dark:border-slate-700">
-                        <td class="p-3 font-mono">${b.id_barang}</td>
-                        <td class="p-3 font-bold">${b.nama_barang}</td>
-                        <td class="p-3">Rp ${b.harga.toLocaleString()}</td>
-                        <td class="p-3">${b.stok}</td>
-                        <td class="p-3 flex gap-2">
-                            <button onclick="prepareEdit('${b.id_barang}', '${b.nama_barang}', ${b.harga}, ${b.stok})" class="text-blue-500 hover:underline">Edit</button>
-                            <button onclick="hapusBarang('${b.id_barang}')" class="text-red-500 hover:underline">Hapus</button>
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td class="p-4 font-mono text-sm opacity-50">${b.id_barang}</td>
+                        <td class="p-4 font-bold">${b.nama_barang}</td>
+                        <td class="p-4 font-semibold text-blue-600 dark:text-blue-400">Rp ${b.harga.toLocaleString()}</td>
+                        <td class="p-4 text-center">
+                            <span class="px-3 py-1 rounded-full text-xs font-bold ${isLow ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-green-100 text-green-600'}">
+                                ${b.stok} ${isLow ? '(Low!)' : ''}
+                            </span>
+                        </td>
+                        <td class="p-4 text-center font-bold">
+                            <button onclick="prepareEdit('${b.id_barang}', '${b.nama_barang}', ${b.harga}, ${b.stok})" class="text-blue-500 mx-2 hover:underline">Edit</button>
+                            <button onclick="hapusBarang('${b.id_barang}')" class="text-red-500 mx-2 hover:underline">Hapus</button>
                         </td>
                     </tr>
                 `;
             });
+            loadAdminStats();
         }
 
-        function openModal() {
-            editMode = false;
-            document.getElementById('barangForm').reset();
-            document.getElementById('id_barang').disabled = false;
-            document.getElementById('modalTitle').innerText = 'Tambah Barang Baru';
-            document.getElementById('crudModal').classList.remove('hidden');
-        }
-
-        function closeModal() { document.getElementById('crudModal').classList.add('hidden'); }
-
-        function prepareEdit(id, nama, harga, stok) {
-            editMode = true;
-            document.getElementById('id_barang').value = id;
-            document.getElementById('id_barang').disabled = true;
-            document.getElementById('nama_barang').value = nama;
-            document.getElementById('harga').value = harga;
-            document.getElementById('stok').value = stok;
-            document.getElementById('modalTitle').innerText = 'Edit Data Barang';
-            document.getElementById('crudModal').classList.remove('hidden');
-        }
-
-        document.getElementById('barangForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const id = document.getElementById('id_barang').value;
-            const data = {
-                nama_barang: document.getElementById('nama_barang').value,
-                harga: document.getElementById('harga').value,
-                stok: document.getElementById('stok').value,
-                id_barang: id
-            };
-
-            const url = editMode ? `/api/barang/${id}` : '/api/barang/add';
-            const method = editMode ? 'PUT' : 'POST';
-
-            const res = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
+        async function renderChart() {
+            const res = await fetch('/api/revenue-trend');
+            const rawData = await res.json();
+            const last7Days = Array.from({ length: 7 }, (_, i) => {
+                const d = new Date(); d.setDate(d.getDate() - (6 - i));
+                return d.toISOString().split('T')[0];
+            });
+            const revenueMap = new Map(rawData.map(i => [i.transaction_date.split('T')[0], i.daily_revenue]));
+            const dataPoints = last7Days.map(date => revenueMap.get(date) || 0);
+            const labels = last7Days.map(date => {
+                const [y, m, d] = date.split('-'); return `${d}/${m}`;
             });
 
-            if (res.ok) {
-                alert('Berhasil disimpan!');
-                closeModal();
-                loadKatalog();
-            }
-        });
+            const isDark = document.documentElement.classList.contains('dark');
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pendapatan',
+                        data: dataPoints,
+                        borderColor: '#3b82f6',
+                        backgroundColor: isDark ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#3b82f6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: isDark ? '#1e293b' : '#f1f5f9' }, ticks: { color: isDark ? '#64748b' : '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: isDark ? '#64748b' : '#94a3b8' } }
+                    }
+                }
+            });
+        }
+
+        function openModal() { editMode = false; document.getElementById('barangForm').reset(); document.getElementById('id_barang').disabled = false; document.getElementById('crudModal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('crudModal').classList.add('hidden'); }
+        function prepareEdit(id, nama, harga, stok) { editMode = true; document.getElementById('id_barang').value = id; document.getElementById('id_barang').disabled = true; document.getElementById('nama_barang').value = nama; document.getElementById('harga').value = harga; document.getElementById('stok').value = stok; document.getElementById('modalTitle').innerText = 'Edit Data Barang'; document.getElementById('crudModal').classList.remove('hidden'); }
+
+        document.getElementById('barangForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('id_barang').value;
+            const data = { nama_barang: document.getElementById('nama_barang').value, harga: document.getElementById('harga').value, stok: document.getElementById('stok').value, id_barang: id };
+            const res = await fetch(editMode ? `/api/barang/${id}` : '/api/barang/add', { method: editMode ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            if (res.ok) { closeModal(); loadKatalog(); renderChart(); loadTopSelling(); }
+        };
 
         async function hapusBarang(id) {
-            if(confirm('Yakin ingin menghapus barang ini?')) {
+            if(confirm('Hapus barang ini?')) {
                 const res = await fetch(`/api/barang/${id}`, { method: 'DELETE' });
-                if(res.ok) loadKatalog();
+                if(res.ok) { loadKatalog(); renderChart(); loadTopSelling(); }
             }
         }
 
         loadKatalog();
+        renderChart();
+        loadTopSelling();
     </script>
 </body>
 </html>
