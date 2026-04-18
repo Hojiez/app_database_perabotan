@@ -102,7 +102,7 @@
             localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
         }
 
-        let barangTerpilih = null, keranjang = [];
+        let barangTerpilih = null, keranjang = JSON.parse(localStorage.getItem('keranjang')) || [];
         const searchInput = document.getElementById('searchBar'), autocompleteList = document.getElementById('autocompleteList'), tampilHarga = document.getElementById('tampilHarga'), jumlahInput = document.getElementById('jumlahBeli'), daftarKeranjang = document.getElementById('daftarKeranjang'), grandTotalTxt = document.getElementById('grandTotal'), btnCheckout = document.getElementById('btnCheckout');
 
         let timer;
@@ -134,10 +134,11 @@
             const idx = keranjang.findIndex(i => i.id_barang === barangTerpilih.id_barang);
             if(idx !== -1) { keranjang[idx].jumlah += parseInt(jumlahInput.value); keranjang[idx].subtotal = keranjang[idx].jumlah * keranjang[idx].harga; }
             else { keranjang.push({ id_barang: barangTerpilih.id_barang, nama_barang: barangTerpilih.nama_barang, harga: barangTerpilih.harga, jumlah: parseInt(jumlahInput.value), subtotal: barangTerpilih.harga * parseInt(jumlahInput.value) }); }
-            barangTerpilih = null; searchInput.value = ''; tampilHarga.value = ''; jumlahInput.value = '1'; render();
+            barangTerpilih = null; searchInput.value = ''; tampilHarga.value = ''; jumlahInput.value = '1'; render(); 
+            localStorage.setItem('keranjang', JSON.stringify(keranjang));
         };
 
-        function render() {
+        function render() { 
             daftarKeranjang.innerHTML = ''; let total = 0;
             if (keranjang.length === 0) { daftarKeranjang.innerHTML = '<p class="text-center text-gray-400 mt-10 italic">Resi masih kosong...</p>'; btnCheckout.disabled = true; }
             else {
@@ -162,7 +163,8 @@
             if (berhasil === keranjang.length) {
                 siapkanStruk();
                 window.print(); // OTOMATIS CETAK
-                keranjang = []; render();
+                keranjang = []; render(); 
+                localStorage.removeItem('keranjang');
             } else { alert("Beberapa barang gagal diproses."); }
             btnCheckout.innerText = 'BAYAR SEKARANG';
         };
@@ -177,6 +179,8 @@
             });
             document.getElementById('p_grandTotal').innerText = grandTotalTxt.innerText;
         }
+
+        render(); // Initial render on page load
     </script>
 </body>
 </html>
