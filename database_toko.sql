@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 11, 2026 at 01:15 AM
+-- Generation Time: May 11, 2026 at 01:19 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -100,6 +100,75 @@ INSERT INTO `barang` (`barang_id`, `nama_barang`, `kategori`, `harga`, `stok`) V
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `detail_transaksi`
+--
+
+CREATE TABLE `detail_transaksi` (
+  `detail_id` varchar(15) NOT NULL,
+  `transaksi_id` varchar(15) NOT NULL,
+  `barang_id` varchar(10) NOT NULL,
+  `jumlah_barang` int(11) NOT NULL,
+  `harga_satuan` decimal(10,2) NOT NULL,
+  `subtotal` decimal(12,2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `detail_transaksi`
+--
+
+INSERT INTO `detail_transaksi` (`detail_id`, `transaksi_id`, `barang_id`, `jumlah_barang`, `harga_satuan`, `subtotal`) VALUES
+('DTL-00001', 'TRX-260511-001', 'BRG001', 1, 250000.00, 250000.00),
+('DTL-00002', 'TRX-260511-002', 'BRG001', 1, 250000.00, 250000.00),
+('DTL-00003', 'TRX-260511-002', 'BRG002', 1, 1200000.00, 1200000.00);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pelanggan`
+--
+
+CREATE TABLE `pelanggan` (
+  `pelanggan_id` varchar(10) NOT NULL,
+  `nama_pelanggan` varchar(100) NOT NULL,
+  `nomor_telepon` varchar(20) DEFAULT NULL,
+  `alamat` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `pelanggan`
+--
+
+INSERT INTO `pelanggan` (`pelanggan_id`, `nama_pelanggan`, `nomor_telepon`, `alamat`) VALUES
+('PLG001', 'Pelanggan Umum', '-', '-'),
+('PLG002', 'Andi Setiawan', '081234567890', 'Jl. Lowokwaru, Malang'),
+('PLG003', 'Siti Aminah', '085712345678', 'Jl. Sukarno Hatta, Malang');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `resi`
+--
+
+CREATE TABLE `resi` (
+  `resi_id` varchar(15) NOT NULL,
+  `transaksi_id` varchar(15) NOT NULL,
+  `nomor_resi` varchar(30) NOT NULL,
+  `tanggal_cetak` datetime NOT NULL,
+  `total_bayar` decimal(12,2) NOT NULL,
+  `kembalian` decimal(12,2) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `resi`
+--
+
+INSERT INTO `resi` (`resi_id`, `transaksi_id`, `nomor_resi`, `tanggal_cetak`, `total_bayar`, `kembalian`) VALUES
+('RS001', 'TRX-260511-001', 'STRK-20260511-1001', '2026-05-11 10:01:00', 300000.00, 50000.00),
+('RS002', 'TRX-260511-002', 'STRK-20260511-1131', '2026-05-11 11:31:00', 1500000.00, 50000.00);
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `transaksi`
 --
 
@@ -154,6 +223,28 @@ ALTER TABLE `barang`
   ADD PRIMARY KEY (`barang_id`);
 
 --
+-- Indexes for table `detail_transaksi`
+--
+ALTER TABLE `detail_transaksi`
+  ADD PRIMARY KEY (`detail_id`),
+  ADD KEY `transaksi_id` (`transaksi_id`),
+  ADD KEY `barang_id` (`barang_id`);
+
+--
+-- Indexes for table `pelanggan`
+--
+ALTER TABLE `pelanggan`
+  ADD PRIMARY KEY (`pelanggan_id`);
+
+--
+-- Indexes for table `resi`
+--
+ALTER TABLE `resi`
+  ADD PRIMARY KEY (`resi_id`),
+  ADD UNIQUE KEY `transaksi_id` (`transaksi_id`),
+  ADD UNIQUE KEY `nomor_resi` (`nomor_resi`);
+
+--
 -- Indexes for table `transaksi`
 --
 ALTER TABLE `transaksi`
@@ -171,6 +262,19 @@ ALTER TABLE `users`
 --
 -- Constraints for dumped tables
 --
+
+--
+-- Constraints for table `detail_transaksi`
+--
+ALTER TABLE `detail_transaksi`
+  ADD CONSTRAINT `detail_transaksi_ibfk_1` FOREIGN KEY (`transaksi_id`) REFERENCES `transaksi` (`transaksi_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `detail_transaksi_ibfk_2` FOREIGN KEY (`barang_id`) REFERENCES `barang` (`barang_id`) ON UPDATE CASCADE;
+
+--
+-- Constraints for table `resi`
+--
+ALTER TABLE `resi`
+  ADD CONSTRAINT `resi_ibfk_1` FOREIGN KEY (`transaksi_id`) REFERENCES `transaksi` (`transaksi_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `transaksi`
