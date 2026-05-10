@@ -92,7 +92,7 @@
         <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl w-full max-w-md shadow-2xl border dark:border-slate-800">
             <h3 id="modalTitle" class="text-2xl font-bold mb-6">Tambah Barang</h3>
             <form id="barangForm" class="space-y-4">
-                <input type="text" id="id_barang" placeholder="ID Barang (cth: BRG020)" class="w-full p-3 border rounded-xl dark:bg-slate-950 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none" required>
+                <input type="text" id="barang_id" placeholder="ID Barang (cth: BRG020)" class="w-full p-3 border rounded-xl dark:bg-slate-950 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none" required>
                 <input type="text" id="nama_barang" placeholder="Nama Barang" class="w-full p-3 border rounded-xl dark:bg-slate-950 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none" required>
                 <input type="number" id="harga" placeholder="Harga" class="w-full p-3 border rounded-xl dark:bg-slate-950 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none" required>
                 <input type="number" id="stok" placeholder="Stok Awal" class="w-full p-3 border rounded-xl dark:bg-slate-950 dark:border-slate-700 focus:ring-2 focus:ring-blue-500 outline-none" required>
@@ -105,14 +105,16 @@
     </div>
 
     <script>
-        if(localStorage.getItem('role') !== 'management') window.location.href = '/';
+        // PERBAIKAN 1: Mengubah 'management' menjadi 'admin'
+        if(localStorage.getItem('role') !== 'admin') window.location.href = '/';
+        
         function logout() { localStorage.clear(); window.location.href = '/'; }
 
         function toggleTheme() {
             document.documentElement.classList.toggle('dark');
             localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
             renderChart();
-            loadTopSelling(); // Refresh styling top selling
+            loadTopSelling();
         }
 
         let editMode = false;
@@ -166,9 +168,10 @@
             table.innerHTML = '';
             data.forEach(b => {
                 const isLow = b.stok < 5;
+                // PERBAIKAN 2: Menggunakan b.barang_id menyesuaikan database baru
                 table.innerHTML += `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                        <td class="p-4 font-mono text-sm opacity-50">${b.id_barang}</td>
+                        <td class="p-4 font-mono text-sm opacity-50">${b.barang_id}</td>
                         <td class="p-4 font-bold">${b.nama_barang}</td>
                         <td class="p-4 font-semibold text-blue-600 dark:text-blue-400">Rp ${b.harga.toLocaleString()}</td>
                         <td class="p-4 text-center">
@@ -177,8 +180,8 @@
                             </span>
                         </td>
                         <td class="p-4 text-center font-bold">
-                            <button onclick="prepareEdit('${b.id_barang}', '${b.nama_barang}', ${b.harga}, ${b.stok})" class="text-blue-500 mx-2 hover:underline">Edit</button>
-                            <button onclick="hapusBarang('${b.id_barang}')" class="text-red-500 mx-2 hover:underline">Hapus</button>
+                            <button onclick="prepareEdit('${b.barang_id}', '${b.nama_barang}', ${b.harga}, ${b.stok})" class="text-blue-500 mx-2 hover:underline">Edit</button>
+                            <button onclick="hapusBarang('${b.barang_id}')" class="text-red-500 mx-2 hover:underline">Hapus</button>
                         </td>
                     </tr>
                 `;
@@ -229,15 +232,42 @@
             });
         }
 
-        function openModal() { editMode = false; document.getElementById('barangForm').reset(); document.getElementById('id_barang').disabled = false; document.getElementById('crudModal').classList.remove('hidden'); }
+        function openModal() { 
+            editMode = false; 
+            document.getElementById('barangForm').reset(); 
+            document.getElementById('barang_id').disabled = false; 
+            document.getElementById('crudModal').classList.remove('hidden'); 
+        }
+        
         function closeModal() { document.getElementById('crudModal').classList.add('hidden'); }
-        function prepareEdit(id, nama, harga, stok) { editMode = true; document.getElementById('id_barang').value = id; document.getElementById('id_barang').disabled = true; document.getElementById('nama_barang').value = nama; document.getElementById('harga').value = harga; document.getElementById('stok').value = stok; document.getElementById('modalTitle').innerText = 'Edit Data Barang'; document.getElementById('crudModal').classList.remove('hidden'); }
+        
+        function prepareEdit(id, nama, harga, stok) { 
+            editMode = true; 
+            document.getElementById('barang_id').value = id; 
+            document.getElementById('barang_id').disabled = true; 
+            document.getElementById('nama_barang').value = nama; 
+            document.getElementById('harga').value = harga; 
+            document.getElementById('stok').value = stok; 
+            document.getElementById('modalTitle').innerText = 'Edit Data Barang'; 
+            document.getElementById('crudModal').classList.remove('hidden'); 
+        }
 
         document.getElementById('barangForm').onsubmit = async (e) => {
             e.preventDefault();
-            const id = document.getElementById('id_barang').value;
-            const data = { nama_barang: document.getElementById('nama_barang').value, harga: document.getElementById('harga').value, stok: document.getElementById('stok').value, id_barang: id };
-            const res = await fetch(editMode ? `/api/barang/${id}` : '/api/barang/add', { method: editMode ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            const id = document.getElementById('barang_id').value;
+            // PERBAIKAN 3: Mengirim atribut yang sesuai dengan server.js
+            const data = { 
+                barang_id: id,
+                nama_barang: document.getElementById('nama_barang').value, 
+                kategori: 'Umum', // Kategori default
+                harga: document.getElementById('harga').value, 
+                stok: document.getElementById('stok').value 
+            };
+            const res = await fetch(editMode ? `/api/barang/${id}` : '/api/barang/add', { 
+                method: editMode ? 'PUT' : 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(data) 
+            });
             if (res.ok) { closeModal(); loadKatalog(); renderChart(); loadTopSelling(); }
         };
 

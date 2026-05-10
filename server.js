@@ -12,7 +12,7 @@ const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
     password: '',
-    database: 'database_toko' // Pastikan nama DB ini benar
+    database: 'database_toko' 
 });
 
 db.connect(err => {
@@ -20,7 +20,7 @@ db.connect(err => {
     else console.log('Database MySQL Terhubung!'); 
 });
 
-// --- AUTH & BARANG ---
+// --- AUTH ---
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     db.query("SELECT * FROM users WHERE username = ? AND password = ?", [username, password], (err, results) => {
@@ -33,6 +33,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
+// --- BARANG ---
 app.get('/api/barang', (req, res) => {
     const search = req.query.search || '';
     db.query("SELECT * FROM barang WHERE nama_barang LIKE ?", [`%${search}%`], (err, results) => {
@@ -42,8 +43,10 @@ app.get('/api/barang', (req, res) => {
 });
 
 app.post('/api/barang/add', (req, res) => {
-    const { id_barang, nama_barang, harga, stok } = req.body;
-    db.query("INSERT INTO barang (id_barang, nama_barang, harga, stok) VALUES (?, ?, ?, ?)", [id_barang, nama_barang, harga, stok], (err) => {
+    const { barang_id, nama_barang, kategori, harga, stok } = req.body;
+    // format BRG00X
+    db.query("INSERT INTO barang (barang_id, nama_barang, kategori, harga, stok) VALUES (?, ?, ?, ?, ?)", 
+    [barang_id, nama_barang, kategori, harga, stok], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Barang berhasil ditambahkan!' });
     });
@@ -51,29 +54,30 @@ app.post('/api/barang/add', (req, res) => {
 
 app.put('/api/barang/:id', (req, res) => {
     const { nama_barang, harga, stok } = req.body;
-    db.query("UPDATE barang SET nama_barang = ?, harga = ?, stok = ? WHERE id_barang = ?", [nama_barang, harga, stok, req.params.id], (err) => {
+    db.query("UPDATE barang SET nama_barang = ?, harga = ?, stok = ? WHERE barang_id = ?", 
+    [nama_barang, harga, stok, req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Data barang berhasil diperbarui!' });
     });
 });
 
 app.delete('/api/barang/:id', (req, res) => {
-    db.query("DELETE FROM barang WHERE id_barang = ?", [req.params.id], (err) => {
+    db.query("DELETE FROM barang WHERE barang_id = ?", [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: 'Barang telah dihapus!' });
     });
 });
 
-// --- TRANSAKSI ---
+// --- TRANSAKSI (Sistem Checkout) ---
 app.post('/api/transaksi', (req, res) => {
     const { id_barang, jumlah } = req.body;
-    db.query("CALL sp_CatatTransaksi(?, ?)", [id_barang, jumlah], (err) => {
+    db.query("UPDATE barang SET stok = stok - ? WHERE barang_id = ?", [jumlah, id_barang], (err) => {
         if (err) return res.status(400).json({ error: err.message });
         res.json({ message: 'Transaksi Berhasil! Stok dipotong.' });
     });
 });
 
-// --- ANALYTICS & STATS ---
+// --- ANALYTICS & STATS (DASHBOARD ADMIN) ---
 app.get('/api/admin-stats', (req, res) => {
     const query = `
         SELECT 
@@ -89,10 +93,10 @@ app.get('/api/admin-stats', (req, res) => {
 
 app.get('/api/revenue-trend', (req, res) => {
     const query = `
-        SELECT DATE(waktu_transaksi) as transaction_date, SUM(total_harga) as daily_revenue 
+        SELECT DATE(tanggal_transaksi) as transaction_date, SUM(total_harga) as daily_revenue 
         FROM transaksi 
-        WHERE waktu_transaksi >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-        GROUP BY DATE(waktu_transaksi)
+        WHERE tanggal_transaksi >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
+        GROUP BY DATE(tanggal_transaksi)
         ORDER BY transaction_date ASC
     `;
     db.query(query, (err, results) => {
@@ -103,10 +107,10 @@ app.get('/api/revenue-trend', (req, res) => {
 
 app.get('/api/top-selling', (req, res) => {
     const query = `
-        SELECT b.nama_barang, SUM(t.jumlah) as total_terjual
-        FROM transaksi t
-        JOIN barang b ON t.id_barang = b.id_barang
-        GROUP BY t.id_barang
+        SELECT b.nama_barang, SUM(dt.jumlah_barang) as total_terjual
+        FROM detail_transaksi dt
+        JOIN barang b ON dt.barang_id = b.barang_id
+        GROUP BY dt.barang_id
         ORDER BY total_terjual DESC
         LIMIT 3
     `;

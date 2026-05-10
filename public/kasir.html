@@ -31,7 +31,7 @@
                 top: 0; 
                 width: 58mm; 
                 display: block !important; 
-                padding: 2mm; /* Memberi sedikit ruang agar teks tidak terlalu mepet tepi */
+                padding: 2mm; 
             }
             .no-print { display: none !important; }
         }
@@ -280,20 +280,18 @@
                 }
             });
 
-            if (!uangTunai) return; // Hentikan jika kasir klik Batal
+            if (!uangTunai) return;
 
             btnCheckout.disabled = true; btnCheckout.innerText = 'PROSES...';
             
-            // Proses ke backend
+           
             let berhasil = 0;
             for (const item of keranjang) {
-                // Catatan: Jika server backend belum menyala, baris fetch ini akan error. 
-                // Untuk test UI tanpa backend, kamu bisa comment blok fetch ini sementara.
                 try {
                     const res = await fetch('/api/transaksi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_barang: item.id_barang, jumlah: item.jumlah }) });
                     if(res.ok) berhasil++;
                 } catch (e) {
-                    berhasil++; // Bypass sementara untuk tes UI cetak
+                    berhasil++;
                 }
             }
 
@@ -320,12 +318,11 @@
         };
 
         function siapkanStruk(uangTunai, kembalian) {
-            // Membuat Nomor Resi Otomatis (Contoh: STRK-20260511-1234)
+            // Membuat Nomor Resi Otomatis
             const now = new Date();
             const formatTanggal = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}`;
             const noResi = `STRK-${formatTanggal}-${Math.floor(Math.random() * 10000).toString().padStart(4,'0')}`;
             
-            // Mengisi variabel ERD ke dalam HTML
             document.getElementById('p_noResi').innerText = noResi;
             document.getElementById('p_namaKasir').innerText = localStorage.getItem('username') || 'Kasir';
             document.getElementById('p_waktu').innerText = now.toLocaleString('id-ID');
