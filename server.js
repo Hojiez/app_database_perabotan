@@ -60,12 +60,46 @@ app.post('/api/barang/add', async (req, res) => {
 
 // --- TRANSAKSI ---
 app.post('/api/transaksi', async (req, res) => {
-    const { id_barang, jumlah } = req.body;
+    // Pastikan menggunakan id_barang (sesuai kiriman body)
+    const { id_barang, jumlah, total_harga, username } = req.body;
+    
     try {
-        await pool.query("UPDATE barang SET stok = stok - $1 WHERE barang_id = $2", [jumlah, id_barang]);
-        res.json({ message: 'Transaksi Berhasil! Stok dipotong.' });
+        // 1. Mulai Transaksi Database
+        await pool.query('BEGIN');
+
+        // 2. Buat ID Transaksi Unik
+        const transaksiId = `TRX-${Date.now()}`;
+
+        // 3. Masukkan ke tabel transaksi (Header)
+        await pool.query(
+            "INSERT INTO transaksi (transaksi_id, user_id, tanggal_transaksi, total_harga, status_transaksi) VALUES ($1, (SELECT user_id FROM users WHERE username = $2), CURRENT_TIMESTAMP, $3, 'Sukses')",
+            [transaksiId, username, total_harga]
+        );
+
+        // 4. Masukkan ke tabel detail_transaksi
+        await pool.query(
+            "INSERT INTO detail_transaksi (transaksi_id, barang_id, jumlah_barang, subtotal, harga_satuan) VALUES ($1, $2, $3, $4, ($4/$3))",
+            [transaksiId, id_barang, jumlah, total_harga]
+        );
+
+        // 5. Update Stok di tabel barang
+        const updateStok = await pool.query(
+            "UPDATE barang SET stok = stok - $1 WHERE barang_id = $2 RETURNING stok",
+            [jumlah, id_barang]
+        );
+
+        if (updateStok.rowCount === 0) {
+            throw new Error('Barang tidak ditemukan');
+        }
+
+        // 6. Selesaikan Transaksi
+        await pool.query('COMMIT');
+        res.json({ success: true, message: 'Transaksi tercatat dan stok diperbarui!' });
+
     } catch (err) {
-        res.status(400).json({ error: err.message });
+        await pool.query('ROLLBACK');
+        console.error(err);
+        res.status(500).json({ error: err.message });
     }
 });
 
