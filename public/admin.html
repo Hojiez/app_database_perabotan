@@ -6,6 +6,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.tailwindcss.com"></script> 
     <script> 
+const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000' 
+    : '';
+
         tailwind.config = { darkMode: 'class' } 
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark')
@@ -121,7 +125,7 @@
         let chartInstance = null;
 
         async function loadAdminStats() {
-            const res = await fetch('/api/admin-stats');
+            const res = await fetch(`${API_BASE_URL}/api/admin-stats`);
             const data = await res.json();
             document.getElementById('statTotalRevenue').innerText = `Rp ${parseInt(data.total_revenue || 0).toLocaleString()}`;
             document.getElementById('statTotalSales').innerText = data.total_sales;
@@ -129,7 +133,7 @@
         }
 
         async function loadTopSelling() {
-            const res = await fetch('/api/top-selling');
+            const res = await fetch(`${API_BASE_URL}/api/top-selling`);
             const data = await res.json();
             const list = document.getElementById('topSellingList');
             list.innerHTML = '';
@@ -162,7 +166,7 @@
         }
 
         async function loadKatalog() {
-            const res = await fetch('/api/barang');
+            const res = await fetch(`${API_BASE_URL}/api/barang`);
             const data = await res.json();
             const table = document.getElementById('katalogTable');
             table.innerHTML = '';
@@ -190,7 +194,7 @@
         }
 
         async function renderChart() {
-            const res = await fetch('/api/revenue-trend');
+            const res = await fetch(`${API_BASE_URL}/api/revenue-trend`);
             const rawData = await res.json();
             const last7Days = Array.from({ length: 7 }, (_, i) => {
                 const d = new Date(); d.setDate(d.getDate() - (6 - i));
@@ -263,17 +267,17 @@
                 harga: document.getElementById('harga').value, 
                 stok: document.getElementById('stok').value 
             };
-            const res = await fetch(editMode ? `/api/barang/${id}` : '/api/barang/add', { 
-                method: editMode ? 'PUT' : 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(data) 
-            });
+            const res = await fetch(editMode ? `${API_BASE_URL}/api/barang/${id}` : `${API_BASE_URL}/api/barang/add`, { 
+             method: editMode ? 'PUT' : 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+              body: JSON.stringify(data) 
+        });
             if (res.ok) { closeModal(); loadKatalog(); renderChart(); loadTopSelling(); }
         };
 
         async function hapusBarang(id) {
             if(confirm('Hapus barang ini?')) {
-                const res = await fetch(`/api/barang/${id}`, { method: 'DELETE' });
+                const res = await fetch(`${API_BASE_URL}/api/barang/${id}`, { method: 'DELETE' });
                 if(res.ok) { loadKatalog(); renderChart(); loadTopSelling(); }
             }
         }

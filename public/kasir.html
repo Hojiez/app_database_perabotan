@@ -6,6 +6,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000' 
+    : '';
+
         tailwind.config = { darkMode: 'class' }
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark')
@@ -159,7 +163,7 @@
             clearTimeout(timer); barangTerpilih = null; tampilHarga.value = '';
             if (searchInput.value.length === 0) return autocompleteList.classList.add('hidden');
             timer = setTimeout(async () => {
-                const res = await fetch(`/api/barang?search=${searchInput.value}`);
+                const res = await fetch(`${API_BASE_URL}/api/barang?search=${searchInput.value}`);
                 const barang = await res.json();
                 autocompleteList.innerHTML = '';
                 if (barang.length === 0) { autocompleteList.innerHTML = '<div class="p-3 text-gray-500 text-center">Tidak ditemukan</div>'; }
@@ -193,13 +197,13 @@
         };
 
         function tambahItem(qty) {
-            const idx = keranjang.findIndex(i => i.id_barang === barangTerpilih.id_barang);
+            const idx = keranjang.findIndex(i => i.barang_id === barangTerpilih.barang_id);
             if(idx !== -1) { 
                 keranjang[idx].jumlah += qty; 
                 keranjang[idx].subtotal = keranjang[idx].jumlah * keranjang[idx].harga; 
             } else { 
                 keranjang.push({ 
-                    id_barang: barangTerpilih.id_barang, 
+                    barang_id: barangTerpilih.barang_id, 
                     nama_barang: barangTerpilih.nama_barang, 
                     harga: barangTerpilih.harga, 
                     jumlah: qty, 
@@ -288,7 +292,7 @@
             let berhasil = 0;
             for (const item of keranjang) {
                 try {
-                    const res = await fetch('/api/transaksi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_barang: item.id_barang, jumlah: item.jumlah }) });
+                    const res = await fetch(`${API_BASE_URL}/api/transaksi`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ barang_id: item.barang_id, jumlah: item.jumlah }) });
                     if(res.ok) berhasil++;
                 } catch (e) {
                     berhasil++;
