@@ -7,8 +7,8 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         const API_BASE_URL = window.location.hostname === 'localhost' 
-    ? 'http://localhost:3000' 
-    : '';
+            ? 'http://localhost:3000' 
+            : '';
 
         tailwind.config = { darkMode: 'class' }
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -23,20 +23,10 @@
         .dark .struk-kertas { background-image: radial-gradient(circle at top, transparent 4px, #1e293b 5px); background-color: #1e293b; }
 
        @media print {
-        @page {
-                size: 58mm auto;
-                margin: 0mm; 
-            }
+            @page { size: 58mm auto; margin: 0mm; }
             body * { visibility: hidden; }
             #areaCetak, #areaCetak * { visibility: visible; }
-            #areaCetak { 
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                width: 58mm; 
-                display: block !important; 
-                padding: 2mm; 
-            }
+            #areaCetak { position: absolute; left: 0; top: 0; width: 58mm; display: block !important; padding: 2mm; }
             .no-print { display: none !important; }
         }
     </style>
@@ -79,14 +69,13 @@
 
         <div class="lg:col-span-5 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-lg relative struk-kertas flex flex-col h-full overflow-hidden">
             <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-white text-center border-b-2 border-dashed border-gray-200 dark:border-slate-700 pb-3">RESI PENJUALAN</h2>
-            <div id="daftarKeranjang" class="flex-1 overflow-y-auto mb-4 space-y-4 pr-2">
-                </div>
+            <div id="daftarKeranjang" class="flex-1 overflow-y-auto mb-4 space-y-4 pr-2"></div>
             <div class="border-t-2 border-dashed border-gray-300 dark:border-slate-700 pt-4 bg-white dark:bg-slate-800">
                 <div class="flex justify-between items-center mb-6">
                     <span class="text-lg font-bold text-gray-600 dark:text-gray-400">TOTAL:</span>
                     <span id="grandTotal" class="text-3xl font-black text-green-600 dark:text-green-400">Rp 0</span>
                 </div>
-                <button id="btnCheckout" class="w-full bg-green-500 text-white font-bold text-xl py-4 rounded-xl shadow-lg shadow-green-500/30 hover:bg-green-600 transition disabled:opacity-50 disabled:grayscale" disabled>BAYAR SEKARANG</button>
+                <button id="btnCheckout" class="w-full bg-green-500 text-white font-bold text-xl py-4 rounded-xl shadow-lg shadow-green-500/30 hover:bg-green-600 transition disabled:opacity-50" disabled>BAYAR SEKARANG</button>
             </div>
         </div>
     </div>
@@ -95,11 +84,9 @@
         <div class="text-center mb-3 border-b border-black border-dashed pb-2">
             <h2 class="text-base font-bold uppercase">Bintang Furniture</h2>
             <p style="font-size: 9px;">Jl. Perabotan No. 123, Malang</p>
-            <p style="font-size: 9px;">Telp: 0812-3456-7890</p>
         </div>
         <div class="mb-2" style="font-size: 9px;">
             <p>No. Resi : <span id="p_noResi"></span></p>
-            <p>Tanggal  : <span id="p_waktu"></span></p>
             <p>Kasir    : <span id="p_namaKasir"></span></p>
         </div>
         <table class="w-full mb-2" style="font-size: 10px;">
@@ -113,30 +100,15 @@
             <tbody id="p_listBarang"></tbody>
         </table>
         <div class="border-t border-black border-dashed pt-2" style="font-size: 10px;">
-            <div class="flex justify-between font-bold">
-                <span>TOTAL</span>
-                <span id="p_grandTotal"></span>
-            </div>
-            <div class="flex justify-between mt-1">
-                <span>Tunai</span>
-                <span id="p_tunai"></span>
-            </div>
-            <div class="flex justify-between">
-                <span>Kembali</span>
-                <span id="p_kembali"></span>
-            </div>
-        </div>
-        <div class="text-center mt-6" style="font-size: 9px;">
-            <p>*** Terima Kasih ***</p>
-            <p class="mt-1">Barang yang dibeli tidak</p>
-            <p>dapat ditukar/dikembalikan.</p>
+            <div class="flex justify-between font-bold"><span>TOTAL</span><span id="p_grandTotal"></span></div>
+            <div class="flex justify-between"><span>Tunai</span><span id="p_tunai"></span></div>
+            <div class="flex justify-between"><span>Kembali</span><span id="p_kembali"></span></div>
         </div>
     </div>
 
     <script>
         if(localStorage.getItem('role') !== 'kasir') window.location.href = '/';
         function logout() { localStorage.clear(); window.location.href = '/'; }
-        
         function toggleTheme() {
             document.documentElement.classList.toggle('dark');
             localStorage.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
@@ -150,48 +122,31 @@
         let barangTerpilih = null, keranjang = JSON.parse(localStorage.getItem('keranjang')) || [];
         const searchInput = document.getElementById('searchBar'), autocompleteList = document.getElementById('autocompleteList'), tampilHarga = document.getElementById('tampilHarga'), jumlahInput = document.getElementById('jumlahBeli'), daftarKeranjang = document.getElementById('daftarKeranjang'), grandTotalTxt = document.getElementById('grandTotal'), btnCheckout = document.getElementById('btnCheckout');
 
-        // KEYBOARD SHORTCUT
-        document.addEventListener('keydown', (e) => {
-            if (e.key === '/' && document.activeElement !== searchInput) {
-                e.preventDefault();
-                searchInput.focus();
-            }
-        });
+        document.addEventListener('keydown', (e) => { if (e.key === '/') { e.preventDefault(); searchInput.focus(); } });
 
         let timer;
         searchInput.addEventListener('input', () => {
-            clearTimeout(timer); barangTerpilih = null; tampilHarga.value = '';
+            clearTimeout(timer);
             if (searchInput.value.length === 0) return autocompleteList.classList.add('hidden');
             timer = setTimeout(async () => {
                 const res = await fetch(`${API_BASE_URL}/api/barang?search=${searchInput.value}`);
                 const barang = await res.json();
                 autocompleteList.innerHTML = '';
-                if (barang.length === 0) { autocompleteList.innerHTML = '<div class="p-3 text-gray-500 text-center">Tidak ditemukan</div>'; }
-                else {
-                    barang.forEach(b => {
-                        if(b.stok <= 0) return;
-                        const item = document.createElement('div');
-                        item.className = 'p-3 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer border-b dark:border-slate-800 flex justify-between items-center transition-colors';
-                        item.innerHTML = `<div><div class="font-bold dark:text-white">${b.nama_barang}</div><div class="text-xs text-gray-400">Sisa: ${b.stok}</div></div><div class="font-bold text-blue-600 dark:text-blue-400">Rp${b.harga.toLocaleString()}</div>`;
-                        
-                        item.onclick = () => {
-                            // SMART FOCUS & ADD
-                            barangTerpilih = b;
-                            tambahItem(1);
-                            searchInput.value = '';
-                            autocompleteList.classList.add('hidden');
-                            searchInput.focus();
-                        };
-                        autocompleteList.appendChild(item);
-                    });
-                }
+                barang.forEach(b => {
+                    if(b.stok <= 0) return;
+                    const item = document.createElement('div');
+                    item.className = 'p-3 hover:bg-blue-50 dark:hover:bg-slate-800 cursor-pointer border-b dark:border-slate-800 flex justify-between items-center';
+                    item.innerHTML = `<div><div class="font-bold dark:text-white">${b.nama_barang}</div><div class="text-xs text-gray-400">Stok: ${b.stok}</div></div><div class="font-bold text-blue-600">Rp${b.harga.toLocaleString()}</div>`;
+                    item.onclick = () => { barangTerpilih = b; tambahItem(1); searchInput.value = ''; autocompleteList.classList.add('hidden'); };
+                    autocompleteList.appendChild(item);
+                });
                 autocompleteList.classList.remove('hidden');
             }, 300);
         });
 
         document.getElementById('formTambah').onsubmit = (e) => {
             e.preventDefault();
-            if (!barangTerpilih) return Swal.fire({...swalConfig(), icon: 'warning', title: 'Pilih barang dulu!'});
+            if (!barangTerpilih) return;
             tambahItem(parseInt(jumlahInput.value));
             barangTerpilih = null; searchInput.value = ''; tampilHarga.value = ''; jumlahInput.value = '1';
         };
@@ -202,146 +157,87 @@
                 keranjang[idx].jumlah += qty; 
                 keranjang[idx].subtotal = keranjang[idx].jumlah * keranjang[idx].harga; 
             } else { 
-                keranjang.push({ 
-                    barang_id: barangTerpilih.barang_id, 
-                    nama_barang: barangTerpilih.nama_barang, 
-                    harga: barangTerpilih.harga, 
-                    jumlah: qty, 
-                    subtotal: barangTerpilih.harga * qty 
-                }); 
+                keranjang.push({ barang_id: barangTerpilih.barang_id, nama_barang: barangTerpilih.nama_barang, harga: barangTerpilih.harga, jumlah: qty, subtotal: barangTerpilih.harga * qty }); 
             }
             render();
             localStorage.setItem('keranjang', JSON.stringify(keranjang));
-            
-            // Mini Toast
-            Swal.fire({
-                toast: true, position: 'top-end', showConfirmButton: false, timer: 1000, icon: 'success', title: 'Ditambahkan', ...swalConfig()
-            });
         }
-
-        window.updateQty = (i, delta) => {
-            keranjang[i].jumlah += delta;
-            if (keranjang[i].jumlah <= 0) return hapus(i);
-            keranjang[i].subtotal = keranjang[i].jumlah * keranjang[i].harga;
-            render();
-            localStorage.setItem('keranjang', JSON.stringify(keranjang));
-        };
 
         function render() {
             daftarKeranjang.innerHTML = ''; let total = 0;
             if (keranjang.length === 0) { 
-                daftarKeranjang.innerHTML = `<div class="flex flex-col items-center justify-center opacity-20 py-10"><svg class="w-20 h-20 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg><p class="italic font-bold">Resi Kosong</p></div>`; 
+                daftarKeranjang.innerHTML = `<p class="text-center opacity-20 py-10 italic">Keranjang Kosong</p>`; 
                 btnCheckout.disabled = true; 
             } else {
                 btnCheckout.disabled = false;
                 keranjang.forEach((item, i) => {
                     total += item.subtotal;
                     daftarKeranjang.innerHTML += `
-                        <div class="flex justify-between items-center border-b dark:border-slate-700 pb-3">
-                            <div class="flex-1">
-                                <div class="font-bold dark:text-gray-100">${item.nama_barang}</div>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <button onclick="updateQty(${i}, -1)" class="w-7 h-7 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center hover:bg-red-100 dark:hover:bg-red-900 transition">-</button>
-                                    <span class="w-8 text-center font-mono dark:text-white">${item.jumlah}</span>
-                                    <button onclick="updateQty(${i}, 1)" class="w-7 h-7 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center hover:bg-green-100 dark:hover:bg-green-900 transition">+</button>
-                                    <span class="text-xs text-gray-400 ml-2">@ ${item.harga.toLocaleString()}</span>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <div class="font-black text-blue-600 dark:text-blue-400">Rp${item.subtotal.toLocaleString()}</div>
-                                <button onclick="hapus(${i})" class="text-[10px] text-red-500 uppercase font-bold tracking-tighter opacity-50 hover:opacity-100">Hapus</button>
-                            </div>
+                        <div class="flex justify-between items-center border-b dark:border-slate-700 pb-2">
+                            <div><div class="font-bold dark:text-white text-sm">${item.nama_barang}</div><div class="text-xs text-gray-400">${item.jumlah} x @${item.harga.toLocaleString()}</div></div>
+                            <div class="text-right"><div class="font-bold text-blue-500 text-sm">Rp${item.subtotal.toLocaleString()}</div><button onclick="hapus(${i})" class="text-[10px] text-red-500 uppercase">Hapus</button></div>
                         </div>`;
                 });
             }
             grandTotalTxt.innerText = `Rp ${total.toLocaleString()}`;
         }
 
-        window.hapus = (i) => { 
-            keranjang.splice(i, 1); 
-            render(); 
-            localStorage.setItem('keranjang', JSON.stringify(keranjang));
-        };
+        window.hapus = (i) => { keranjang.splice(i, 1); render(); localStorage.setItem('keranjang', JSON.stringify(keranjang)); };
 
         btnCheckout.onclick = async () => {
-            // Hitung total angka murni
-            let totalAngka = 0;
-            keranjang.forEach(item => totalAngka += item.subtotal);
-
-            // Munculkan Pop-up untuk input uang tunai pelanggan
+            let totalAngka = keranjang.reduce((sum, i) => sum + i.subtotal, 0);
             const { value: uangTunai } = await Swal.fire({
                 title: 'Pembayaran',
-                text: `Total Tagihan: Rp ${totalAngka.toLocaleString()}`,
+                text: `Tagihan: Rp ${totalAngka.toLocaleString()}`,
                 input: 'number',
-                inputPlaceholder: 'Masukkan uang tunai...',
+                inputPlaceholder: 'Nominal tunai...',
                 showCancelButton: true,
-                confirmButtonText: 'Bayar & Cetak',
-                cancelButtonText: 'Batal',
                 ...swalConfig(),
-                inputValidator: (value) => {
-                    if (!value) return 'Masukkan nominal uang!';
-                    if (value < totalAngka) return 'Uang tunai kurang dari total tagihan!';
-                }
+                inputValidator: (v) => v < totalAngka ? 'Uang kurang!' : null
             });
 
             if (!uangTunai) return;
 
-            btnCheckout.disabled = true; btnCheckout.innerText = 'PROSES...';
-            
-           
-            let berhasil = 0;
+            btnCheckout.disabled = true;
+            let berhasilCount = 0;
             for (const item of keranjang) {
                 try {
-                    const res = await fetch(`${API_BASE_URL}/api/transaksi`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ barang_id: item.barang_id, jumlah: item.jumlah }) });
-                    if(res.ok) berhasil++;
-                } catch (e) {
-                    berhasil++;
-                }
+                    const res = await fetch(`${API_BASE_URL}/api/transaksi`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            id_barang: item.barang_id, 
+                            jumlah: item.jumlah, 
+                            total_harga: item.subtotal, 
+                            username: localStorage.getItem('username') 
+                        })
+                    });
+                    if (res.ok) berhasilCount++;
+                } catch (e) { console.error(e); }
             }
 
-            if (berhasil > 0) {
+            if (berhasilCount === keranjang.length) {
                 const kembalian = uangTunai - totalAngka;
-                siapkanStruk(uangTunai, kembalian); // Kirim data uang ke struk
-                
-                await Swal.fire({ 
-                    icon: 'success', 
-                    title: 'Pembayaran Sukses', 
-                    html: `Kembalian: <br><b class="text-2xl text-green-500">Rp ${kembalian.toLocaleString()}</b>`, 
-                    timer: 2500, 
-                    showConfirmButton: false, 
-                    ...swalConfig() 
-                });
-                
-                window.print(); // Trigger cetak struk
-                keranjang = []; render();
+                siapkanStruk(uangTunai, kembalian);
+                await Swal.fire({ icon: 'success', title: 'Sukses!', text: `Kembalian: Rp ${kembalian.toLocaleString()}`, ...swalConfig() });
+                window.print();
+                keranjang = [];
                 localStorage.removeItem('keranjang');
-            } else { 
-                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Koneksi ke server gagal.', ...swalConfig() }); 
+                render();
+            } else {
+                Swal.fire({ icon: 'error', title: 'Gagal!', text: 'Beberapa item gagal diproses.', ...swalConfig() });
             }
-            btnCheckout.innerText = 'BAYAR SEKARANG';
+            btnCheckout.disabled = false;
         };
 
         function siapkanStruk(uangTunai, kembalian) {
-            // Membuat Nomor Resi Otomatis
-            const now = new Date();
-            const formatTanggal = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}`;
-            const noResi = `STRK-${formatTanggal}-${Math.floor(Math.random() * 10000).toString().padStart(4,'0')}`;
-            
-            document.getElementById('p_noResi').innerText = noResi;
-            document.getElementById('p_namaKasir').innerText = localStorage.getItem('username') || 'Kasir';
-            document.getElementById('p_waktu').innerText = now.toLocaleString('id-ID');
-            
+            document.getElementById('p_noResi').innerText = `STRK-${Date.now()}`;
+            document.getElementById('p_namaKasir').innerText = localStorage.getItem('username');
             const list = document.getElementById('p_listBarang');
             list.innerHTML = '';
             keranjang.forEach(item => {
-                list.innerHTML += `
-                <tr>
-                    <td class="pt-2 align-top">${item.nama_barang}</td>
-                    <td class="pt-2 align-top text-center">${item.jumlah}</td>
-                    <td class="pt-2 align-top text-right">Rp${item.subtotal.toLocaleString()}</td>
-                </tr>`;
+                list.innerHTML += `<tr><td>${item.nama_barang}</td><td class="text-center">${item.jumlah}</td><td class="text-right">Rp${item.subtotal.toLocaleString()}</td></tr>`;
             });
-            
             document.getElementById('p_grandTotal').innerText = grandTotalTxt.innerText;
             document.getElementById('p_tunai').innerText = `Rp ${parseInt(uangTunai).toLocaleString()}`;
             document.getElementById('p_kembali').innerText = `Rp ${kembalian.toLocaleString()}`;
