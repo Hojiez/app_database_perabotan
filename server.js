@@ -2,6 +2,19 @@ const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
 const path = require('path');
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false // Dibutuhkan untuk koneksi eksternal ke Railway
+  }
+});
+
+pool.connect((err) => {
+  if (err) console.error('Gagal koneksi ke Postgres:', err.stack);
+  else console.log('Database Postgres Terhubung!');
+});
 
 const app = express();
 app.use(cors());
@@ -9,10 +22,16 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'database_toko' 
+  host: process.env.MYSQLHOST || 'localhost',
+  user: process.env.MYSQLUSER || 'root',
+  password: process.env.MYSQLPASSWORD || '',
+  database: process.env.MYSQLDATABASE || 'database_toko',
+  port: process.env.MYSQLPORT || 3307 // Sesuaikan port lokal kamu jika berbeda
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server berjalan di port ${PORT}`);
 });
 
 db.connect(err => {
@@ -21,88 +40,105 @@ db.connect(err => {
 });
 
 // --- AUTH ---
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
-    db.query("SELECT * FROM users WHERE username = ? AND password = ?", [username, password], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (results.length > 0) {
-            res.json({ success: true, role: results[0].role, username: results[0].username });
+    try {
+        // Postgres menggunakan $1, $2 dst untuk placeholder, bukan ?
+        const results = await pool.query("SELECT * FROM users WHERE username = $1 AND password = $2", [username, password]);
+        if (results.rows.length > 0) {
+            res.json({ success: true, role: results.rows[0].role, username: results.rows[0].username });
         } else {
             res.status(401).json({ success: false, message: 'Username atau password salah!' });
         }
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // --- BARANG ---
-app.get('/api/barang', (req, res) => {
+app.get('/api/barang', async (req, res) => {
     const search = req.query.search || '';
-    db.query("SELECT * FROM barang WHERE nama_barang LIKE ?", [`%${search}%`], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
+    try {
+        const results = await pool.query("SELECT * FROM barang WHERE nama_barang ILIKE $1", [`%${search}%`]);
+        res.json(results.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.post('/api/barang/add', (req, res) => {
+app.post('/api/barang/add', async (req, res) => {
     const { barang_id, nama_barang, kategori, harga, stok } = req.body;
-    // format BRG00X
-    db.query("INSERT INTO barang (barang_id, nama_barang, kategori, harga, stok) VALUES (?, ?, ?, ?, ?)", 
-    [barang_id, nama_barang, kategori, harga, stok], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        await pool.query("INSERT INTO barang (barang_id, nama_barang, kategori, harga, stok) VALUES ($1, $2, $3, $4, $5)", 
+        [barang_id, nama_barang, kategori, harga, stok]);
         res.json({ message: 'Barang berhasil ditambahkan!' });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.put('/api/barang/:id', (req, res) => {
+app.put('/api/barang/:id', async (req, res) => {
     const { nama_barang, harga, stok } = req.body;
-    db.query("UPDATE barang SET nama_barang = ?, harga = ?, stok = ? WHERE barang_id = ?", 
-    [nama_barang, harga, stok, req.params.id], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        await pool.query("UPDATE barang SET nama_barang = $1, harga = $2, stok = $3 WHERE barang_id = $4", 
+        [nama_barang, harga, stok, req.params.id]);
         res.json({ message: 'Data barang berhasil diperbarui!' });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.delete('/api/barang/:id', (req, res) => {
-    db.query("DELETE FROM barang WHERE barang_id = ?", [req.params.id], (err) => {
-        if (err) return res.status(500).json({ error: err.message });
+app.delete('/api/barang/:id', async (req, res) => {
+    try {
+        await pool.query("DELETE FROM barang WHERE barang_id = $1", [req.params.id]);
         res.json({ message: 'Barang telah dihapus!' });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // --- TRANSAKSI (Sistem Checkout) ---
-app.post('/api/transaksi', (req, res) => {
+app.post('/api/transaksi', async (req, res) => {
     const { id_barang, jumlah } = req.body;
-    db.query("UPDATE barang SET stok = stok - ? WHERE barang_id = ?", [jumlah, id_barang], (err) => {
-        if (err) return res.status(400).json({ error: err.message });
+    try {
+        await pool.query("UPDATE barang SET stok = stok - $1 WHERE barang_id = $2", [jumlah, id_barang]);
         res.json({ message: 'Transaksi Berhasil! Stok dipotong.' });
-    });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 // --- ANALYTICS & STATS (DASHBOARD ADMIN) ---
-app.get('/api/admin-stats', (req, res) => {
-    const query = `
-        SELECT 
-            (SELECT SUM(total_harga) FROM transaksi) as total_revenue,
-            (SELECT COUNT(*) FROM transaksi) as total_sales,
-            (SELECT COUNT(*) FROM barang WHERE stok < 5) as low_stock_count
-    `;
-    db.query(query, (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results[0]);
-    });
+app.get('/api/admin-stats', async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                (SELECT SUM(total_harga) FROM transaksi) as total_revenue,
+                (SELECT COUNT(*) FROM transaksi) as total_sales,
+                (SELECT COUNT(*) FROM barang WHERE stok < 5) as low_stock_count
+        `;
+        const results = await pool.query(query);
+        res.json(results.rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.get('/api/revenue-trend', (req, res) => {
-    const query = `
-        SELECT DATE(tanggal_transaksi) as transaction_date, SUM(total_harga) as daily_revenue 
-        FROM transaksi 
-        WHERE tanggal_transaksi >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)
-        GROUP BY DATE(tanggal_transaksi)
-        ORDER BY transaction_date ASC
-    `;
-    db.query(query, (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
+app.get('/api/revenue-trend', async (req, res) => {
+    try {
+        // Penyesuaian sintaks tanggal Postgres
+        const query = `
+            SELECT DATE(tanggal_transaksi) as transaction_date, SUM(total_harga) as daily_revenue 
+            FROM transaksi 
+            WHERE tanggal_transaksi >= CURRENT_DATE - INTERVAL '6 days'
+            GROUP BY DATE(tanggal_transaksi)
+            ORDER BY transaction_date ASC
+        `;
+        const results = await pool.query(query);
+        res.json(results.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.get('/api/top-selling', (req, res) => {
@@ -120,4 +156,7 @@ app.get('/api/top-selling', (req, res) => {
     });
 });
 
-app.listen(3000, () => console.log(`Server berjalan di http://localhost:3000`));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
