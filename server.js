@@ -136,6 +136,23 @@ app.get('/api/top-selling', async (req, res) => {
     }
 });
 
+app.get('/api/revenue-trend', async (req, res) => {
+    try {
+        const query = `
+            SELECT DATE(tanggal_transaksi) as transaction_date, SUM(total_harga) as daily_revenue
+            FROM transaksi
+            WHERE tanggal_transaksi > CURRENT_DATE - INTERVAL '7 days'
+            GROUP BY DATE(tanggal_transaksi)
+            ORDER BY transaction_date ASC
+        `;
+        const results = await pool.query(query);
+        res.json(results.rows);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server berjalan di port ${PORT}`);
