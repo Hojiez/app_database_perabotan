@@ -78,9 +78,9 @@ app.post('/api/transaksi', async (req, res) => {
 
         // 4. Masukkan ke tabel detail_transaksi
         await pool.query(
-            "INSERT INTO detail_transaksi (transaksi_id, barang_id, jumlah_barang, subtotal, harga_satuan) VALUES ($1, $2, $3, $4, ($4/$3))",
-            [transaksiId, id_barang, jumlah, total_harga]
-        );
+    "INSERT INTO detail_transaksi (transaksi_id, barang_id, jumlah_barang, subtotal, harga_satuan) VALUES ($1, $2, $3, $4, ($4::numeric / $3::int))",
+    [transaksiId, id_barang, jumlah, total_harga]
+    );
 
         // 5. Update Stok di tabel barang
         const updateStok = await pool.query(
